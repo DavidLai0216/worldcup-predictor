@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>世界盃比分預測平台</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">World Cup Predictor</p>
+      <h1>市場機率 × 進球模型的比分預測平台</h1>
+      <p class="subhead">用 Polymarket / Kalshi 的勝平負隱含機率校準 Poisson / Dixon-Coles 比分矩陣，輸出最可能比分與分佈。</p>
+    </div>
+    <div id="health" class="status status-waiting">後端檢查中…</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel control-panel">
+      <div class="section-title">
+        <span>1</span>
+        <div>
+          <h2>輸入對戰</h2>
+          <p>先輸入兩隊名稱，再嘗試自動抓資料。抓不到時可手動校正。</p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <label>
+          主隊 / A 隊
+          <input id="homeTeam" value="France" placeholder="例如 France" />
+        </label>
+        <label>
+          客隊 / B 隊
+          <input id="awayTeam" value="Argentina" placeholder="例如 Argentina" />
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="fetchSources" class="primary">自動撈資料源</button>
+        <button id="predict" class="secondary">重新計算</button>
+      </div>
+
+      <div id="sourceNotes" class="notes compact"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <span>2</span>
+        <div>
+          <h2>兩隊近況</h2>
+          <p>TheSportsDB 只能當初始值，正式下注或比賽前要人工校對。</p>
+        </div>
+      </div>
+
+      <div class="team-forms">
+        <div class="team-card">
+          <h3 id="homeLabel">France</h3>
+          <div class="grid three">
+            <label>場數<input id="homeGames" type="number" min="1" value="5" /></label>
+            <label>進球<input id="homeGF" type="number" min="0" value="8" /></label>
+            <label>失球<input id="homeGA" type="number" min="0" value="4" /></label>
+          </div>
+          <p id="homeRecordText" class="small muted">手動預設值</p>
+        </div>
+        <div class="team-card">
+          <h3 id="awayLabel">Argentina</h3>
+          <div class="grid three">
+            <label>場數<input id="awayGames" type="number" min="1" value="5" /></label>
+            <label>進球<input id="awayGF" type="number" min="0" value="7" /></label>
+            <label>失球<input id="awayGA" type="number" min="0" value="3" /></label>
+          </div>
+          <p id="awayRecordText" class="small muted">手動預設值</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <span>3</span>
+        <div>
+          <h2>市場隱含機率</h2>
+          <p>自動解析失敗時，直接填入你看到的勝 / 平 / 負機率。</p>
+        </div>
+      </div>
+
+      <div class="grid three">
+        <label>主隊勝<input id="marketHome" type="number" min="0" max="100" step="0.1" value="39" /><b>%</b></label>
+        <label>和局<input id="marketDraw" type="number" min="0" max="100" step="0.1" value="28" /><b>%</b></label>
+        <label>客隊勝<input id="marketAway" type="number" min="0" max="100" step="0.1" value="33" /><b>%</b></label>
+      </div>
+
+      <div class="grid three settings">
+        <label>市場權重<input id="marketWeight" type="range" min="0" max="100" value="55" /></label>
+        <label>平均進球 μ<input id="globalMean" type="number" min="0.5" max="3" step="0.05" value="1.35" /></label>
+        <label>Dixon-Coles ρ<input id="rho" type="number" min="-0.3" max="0.3" step="0.01" value="-0.08" /></label>
+      </div>
+      <p id="marketSource" class="small muted">目前使用手動市場機率。</p>
+    </section>
+
+    <section class="panel output-panel">
+      <div class="section-title">
+        <span>4</span>
+        <div>
+          <h2>預測結果</h2>
+          <p>重點不是單一答案，而是看比分機率分佈與勝平負校準是否合理。</p>
+        </div>
+      </div>
+
+      <div class="result-hero">
+        <div>
+          <p class="eyebrow">最可能比分</p>
+          <div id="bestScore" class="best-score">—</div>
+          <p id="bestScoreProb" class="muted">等待計算</p>
+        </div>
+        <div class="outcome-boxes">
+          <div><span id="outHome">—</span><small>主勝</small></div>
+          <div><span id="outDraw">—</span><small>和局</small></div>
+          <div><span id="outAway">—</span><small>客勝</small></div>
+        </div>
+      </div>
+
+      <div class="grid two result-grid">
+        <div>
+          <h3>Top 10 比分</h3>
+          <table>
+            <thead><tr><th>排名</th><th>比分</th><th>結果</th><th>機率</th></tr></thead>
+            <tbody id="topScores"></tbody>
+          </table>
+        </div>
+        <div>
+          <h3>模型診斷</h3>
+          <div id="diagnostics" class="diagnostics"></div>
+        </div>
+      </div>
+
+      <div>
+        <h3>比分矩陣</h3>
+        <div id="scoreMatrix" class="matrix"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>限制：精確比分本質難測，最可能比分通常只有低十位數百分比。這是決策輔助，不是保證。</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

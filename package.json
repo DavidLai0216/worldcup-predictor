@@ -1,0 +1,25 @@
+{
+  "name": "worldcup-predictor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "World Cup exact-score prediction platform using market-implied probabilities plus Poisson/Dixon-Coles goal model.",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "world-cup",
+    "prediction",
+    "poisson",
+    "dixon-coles",
+    "polymarket",
+    "kalshi"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}
