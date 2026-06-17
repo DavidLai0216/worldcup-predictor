@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-06-17T07:14:53.080Z",
-  "policy": "只顯示可追溯授權的真實球迷照片；未能確認為真實授權照片時標示待補，不再使用 AI 或 SVG 示意圖。",
+  "updatedAt": "2026-06-17T07:34:00.844Z",
+  "policy": "優先顯示該國足球球迷的可追溯授權真實照片；沒有足球照片時，可使用該國其他運動的成年女性球迷或觀眾真實照片。未能確認時標示待補，不使用 AI、SVG 或示意圖。",
   "teams": {
     "MEX": {
       "team": "墨西哥",
@@ -17,14 +17,15 @@
     "RSA": {
       "team": "南非",
       "searchQuery": "South Africa adult woman football fan portrait World Cup supporter",
-      "source": "真實授權照片待補",
-      "sourceUrl": null,
-      "imageUrl": null,
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:FIFA_World_Cup_Fans_3.jpg",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dc/FIFA_World_Cup_Fans_3.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "pending",
-      "description": null,
-      "license": null
+      "kind": "real",
+      "description": "Fans celebrating the upcoming 2010 FIFA World Cup in South Africa; visual review confirms an adult female South Africa fan is present.",
+      "license": "CC BY 3.0",
+      "sport": "football"
     },
     "KOR": {
       "team": "韓國",
@@ -156,7 +157,8 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "US Women's National Team Victory Tour fans at Allianz Field.",
-      "license": "CC BY-SA 2.0"
+      "license": "CC BY-SA 2.0",
+      "sport": "football"
     },
     "PAR": {
       "team": "巴拉圭",
@@ -204,7 +206,8 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "Austria vs Germany women World Cup qualification supporters.",
-      "license": "CC BY-SA 4.0"
+      "license": "CC BY-SA 4.0",
+      "sport": "football"
     },
     "CUW": {
       "team": "庫拉索",
@@ -252,19 +255,21 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "FIFA Women's World Cup 2019 Dutch fans in Le Havre.",
-      "license": "CC BY 4.0"
+      "license": "CC BY 4.0",
+      "sport": "football"
     },
     "JPN": {
       "team": "日本",
       "searchQuery": "Japan adult woman football fan portrait World Cup supporter",
-      "source": "真實授權照片待補",
-      "sourceUrl": null,
-      "imageUrl": null,
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:World_cup_-_japanese_girl.jpg",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/98/World_cup_-_japanese_girl.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "pending",
-      "description": null,
-      "license": null
+      "kind": "real",
+      "description": "Japanese fan after the Australia vs Japan World Cup match; visual review confirms an adult female-appearing Japan fan.",
+      "license": "CC BY 2.0",
+      "sport": "football"
     },
     "SWE": {
       "team": "瑞典",
@@ -324,7 +329,8 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "Iranian football fan at an Angola-Iran game",
-      "license": "CC BY 2.0"
+      "license": "CC BY 2.0",
+      "sport": "football"
     },
     "NZL": {
       "team": "紐西蘭",
@@ -456,7 +462,8 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "Algerian women enjoy a football match.",
-      "license": "CC BY 2.0"
+      "license": "CC BY 2.0",
+      "sport": "football"
     },
     "AUT": {
       "team": "奧地利",
@@ -468,7 +475,8 @@
       "updatedAfter": null,
       "kind": "real",
       "description": "Austria vs Germany women World Cup qualification supporters.",
-      "license": "CC BY-SA 4.0"
+      "license": "CC BY-SA 4.0",
+      "sport": "football"
     },
     "JOR": {
       "team": "約旦",
