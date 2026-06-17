@@ -18,6 +18,23 @@
   <main>
     <section class="toolbar" aria-label="賽程階段">
       <div id="tabs" class="tabs"></div>
+      <div class="jump-panel" aria-label="快速跳轉">
+        <div class="jump-panel__search">
+          <label for="jumpSearch">搜尋</label>
+          <input id="jumpSearch" type="search" placeholder="輸入國家、組別、城市或場次" autocomplete="off" />
+        </div>
+        <div class="jump-panel__selects">
+          <label>
+            <span>組別</span>
+            <select id="groupJump"></select>
+          </label>
+          <label>
+            <span>國家</span>
+            <select id="teamJump"></select>
+          </label>
+        </div>
+        <div id="jumpResults" class="jump-results"></div>
+      </div>
       <p id="sourceNote" class="source-note"></p>
     </section>
 

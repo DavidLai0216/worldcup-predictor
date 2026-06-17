@@ -535,6 +535,80 @@ function renderTabs() {
   `).join('');
 }
 
+function teamGroupName(code) {
+  const group = GROUPS.find((item) => item.standings.some(([teamCode]) => teamCode === code));
+  return group?.name || '';
+}
+
+function navigationItems() {
+  const groupItems = GROUPS.map((group) => ({
+    type: 'group',
+    label: group.name,
+    meta: '小組積分與賽程',
+    target: groupAnchor(group),
+    tokens: `${group.name} ${group.id}組 group ${group.id}`,
+  }));
+  const teamItems = Object.keys(TEAM).map((code) => ({
+    type: 'team',
+    label: `${team(code).flag} ${team(code).name}`,
+    meta: `${teamGroupName(code)}｜${code}`,
+    target: teamAnchor(code),
+    tokens: `${code} ${team(code).name} ${teamGroupName(code)} ${(TAIWAN_TEAM_ALIASES[code] || []).join(' ')}`,
+  }));
+  const fixtureItems = allFixtures().map((fixture) => ({
+    type: 'fixture',
+    label: `${team(fixture.home).name} vs ${team(fixture.away).name}`,
+    meta: `${fixture.group}｜${fixture.date}｜${fixture.venue}`,
+    target: fixtureAnchor(fixture),
+    tokens: `${fixture.home} ${fixture.away} ${team(fixture.home).name} ${team(fixture.away).name} ${fixture.group} ${fixture.date} ${fixture.venue} ${fixture.status}`,
+  }));
+  return [...groupItems, ...teamItems, ...fixtureItems];
+}
+
+function jumpToTarget(targetId) {
+  if (!targetId) return;
+  if (state.activeTab !== 'groups') {
+    state.activeTab = 'groups';
+    render();
+  }
+  requestAnimationFrame(() => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const highlightTarget = target.classList.contains('anchor-marker') ? target.closest('.fixture-card') : target;
+    (highlightTarget || target).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    highlightTarget?.classList.add('jump-highlight');
+    window.setTimeout(() => highlightTarget?.classList.remove('jump-highlight'), 1400);
+  });
+}
+
+function renderJumpControls() {
+  const groupSelect = $('groupJump');
+  const teamSelect = $('teamJump');
+  if (!groupSelect || !teamSelect) return;
+
+  groupSelect.innerHTML = '<option value="">選擇組別</option>' + GROUPS.map((group) => `<option value="${groupAnchor(group)}">${group.name}</option>`).join('');
+  teamSelect.innerHTML = '<option value="">選擇國家</option>' + Object.keys(TEAM)
+    .sort((a, b) => team(a).name.localeCompare(team(b).name, 'zh-Hant'))
+    .map((code) => `<option value="${teamAnchor(code)}">${team(code).flag} ${team(code).name}｜${teamGroupName(code)}</option>`)
+    .join('');
+  renderJumpResults($('jumpSearch')?.value || '');
+}
+
+function renderJumpResults(query) {
+  const container = $('jumpResults');
+  if (!container) return;
+  const normalized = normalizeTaiwanName(query).toLowerCase();
+  const items = navigationItems()
+    .filter((item) => !normalized || normalizeTaiwanName(`${item.label} ${item.meta} ${item.tokens}`).toLowerCase().includes(normalized))
+    .slice(0, normalized ? 10 : 8);
+  container.innerHTML = items.map((item) => `
+    <button type="button" class="jump-chip" data-jump-target="${item.target}">
+      <strong>${item.label}</strong>
+      <span>${item.meta}</span>
+    </button>
+  `).join('');
+}
+
 function renderStandingTable(group) {
   const standings = currentStandings(group);
   return `
@@ -576,6 +650,18 @@ function currentFixturesForGroup(group) {
 
 function fixtureKey(home, away) {
   return [home, away].sort().join('-');
+}
+
+function groupAnchor(group) {
+  return `group-${group.id.toLowerCase()}`;
+}
+
+function teamAnchor(code) {
+  return `team-${code.toLowerCase()}`;
+}
+
+function fixtureAnchor(fixture) {
+  return `fixture-${fixture.id}`;
 }
 
 function taiwanNameMatches(code, name) {
@@ -1033,9 +1119,23 @@ function renderFanPortraits(fixture) {
   `;
 }
 
+function firstFixtureForTeam(code) {
+  return allFixtures().find((fixture) => fixture.home === code || fixture.away === code);
+}
+
+function teamAnchorMarker(fixture) {
+  const markers = [];
+  for (const code of [fixture.home, fixture.away]) {
+    const first = firstFixtureForTeam(code);
+    if (first?.id === fixture.id) markers.push(`<span id="${teamAnchor(code)}" class="anchor-marker"></span>`);
+  }
+  return markers.join('');
+}
+
 function renderFixtureCard(fixture) {
   return `
-    <article class="fixture-card ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
+    <article id="${fixtureAnchor(fixture)}" class="fixture-card ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}" data-home="${fixture.home}" data-away="${fixture.away}">
+      ${teamAnchorMarker(fixture)}
       <div class="fixture-card__top">
         <div>
           <p class="eyebrow">${fixture.group}｜${fixture.date}</p>
@@ -1056,7 +1156,7 @@ function renderGroups() {
   $('content').innerHTML = `${renderLiveFixtures(liveFixtures)}${renderRegressionPanel()}${GROUPS.map((group) => {
     const fixtures = currentFixturesForGroup(group).filter((fixture) => !isLiveFixture(fixture));
     return `
-      <section class="group-section">
+      <section id="${groupAnchor(group)}" class="group-section">
         <div class="group-header">
           <h2>${group.name}</h2>
           <p>四隊積分與完整小組賽賽程</p>
@@ -1145,6 +1245,7 @@ function renderSourceNote() {
 
 function render() {
   renderTabs();
+  renderJumpControls();
   renderSourceNote();
   if (state.activeTab === 'groups') renderGroups();
   else renderEmptyKnockout(state.activeTab);
@@ -1155,6 +1256,32 @@ $('tabs').addEventListener('click', (event) => {
   if (!button) return;
   state.activeTab = button.dataset.tab;
   render();
+});
+
+$('jumpSearch').addEventListener('input', (event) => {
+  renderJumpResults(event.target.value);
+});
+
+$('jumpSearch').addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  const first = document.querySelector('.jump-chip[data-jump-target]');
+  if (first) jumpToTarget(first.dataset.jumpTarget);
+});
+
+$('groupJump').addEventListener('change', (event) => {
+  jumpToTarget(event.target.value);
+  event.target.value = '';
+});
+
+$('teamJump').addEventListener('change', (event) => {
+  jumpToTarget(event.target.value);
+  event.target.value = '';
+});
+
+$('jumpResults').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-jump-target]');
+  if (!button) return;
+  jumpToTarget(button.dataset.jumpTarget);
 });
 
 document.addEventListener('click', (event) => {

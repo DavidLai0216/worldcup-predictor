@@ -100,6 +100,104 @@ button.tab {
   border-color: #cfd6e2;
 }
 
+.jump-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.jump-panel__search,
+.jump-panel__selects label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.jump-panel__search input,
+.jump-panel__selects select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+  font-weight: 750;
+}
+
+.jump-panel__search input:focus,
+.jump-panel__selects select:focus {
+  outline: 3px solid rgba(23, 104, 91, 0.18);
+  border-color: var(--accent);
+}
+
+.jump-panel__selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.jump-results {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jump-chip {
+  display: inline-grid;
+  gap: 2px;
+  max-width: 260px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f8fafc;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.jump-chip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.jump-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.jump-chip:hover {
+  border-color: #b9ded5;
+  background: var(--accent-soft);
+}
+
+.anchor-marker {
+  position: relative;
+  top: -12px;
+  display: block;
+  height: 0;
+}
+
+.jump-highlight {
+  animation: jumpPulse 1.3s ease-out;
+}
+
+@keyframes jumpPulse {
+  0% { box-shadow: 0 0 0 0 rgba(23, 104, 91, 0.45), var(--shadow); }
+  100% { box-shadow: 0 0 0 16px rgba(23, 104, 91, 0), var(--shadow); }
+}
+
 .source-note {
   color: var(--muted);
   line-height: 1.6;
@@ -571,6 +669,15 @@ footer {
   .source-pill {
     display: inline-block;
     margin-top: 10px;
+  }
+
+  .jump-panel__selects {
+    grid-template-columns: 1fr;
+  }
+
+  .jump-chip {
+    max-width: 100%;
+    width: 100%;
   }
 
   .standings-table {
