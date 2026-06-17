@@ -51,6 +51,18 @@ const TEAM = {
   PAN: { name: '巴拿馬', flag: '🇵🇦' },
 };
 
+const PLAYER_NAME_ZH = {
+  'Lionel Messi': '里奧・梅西',
+  'Rodrigo De Paul': '羅德里戈・德保羅',
+  'Cristiano Ronaldo': '克里斯蒂亞諾・羅納度',
+  'Bruno Fernandes': '布魯諾・費南德斯',
+  'Harry Kane': '哈里・凱恩',
+  'Bukayo Saka': '布卡約・薩卡',
+  'Luka Modric': '盧卡・莫德里奇',
+  'Mohamed Kudus': '穆罕默德・庫杜斯',
+  'Luis Díaz': '路易斯・迪亞斯',
+};
+
 const GROUPS = [
   {
     id: 'A',
@@ -279,7 +291,14 @@ const KNOCKOUT_TABS = [
   { id: 'final', label: '決賽', slots: 1 },
 ];
 
-const state = { activeTab: 'groups' };
+const LIVE_REFRESH_MS = 30000;
+const ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+const state = {
+  activeTab: 'groups',
+  liveOverrides: new Map(),
+  lastLiveUpdate: null,
+  liveError: null,
+};
 
 function team(code) {
   return TEAM[code] || { name: code, flag: '🏳️' };
@@ -288,6 +307,10 @@ function team(code) {
 function teamLabel(code) {
   const t = team(code);
   return `<span class="flag" aria-hidden="true">${t.flag}</span><span>${t.name}</span>`;
+}
+
+function playerLabel(name) {
+  return PLAYER_NAME_ZH[name] || name || '進球者待確認';
 }
 
 function pct(value) {
@@ -320,7 +343,7 @@ function buildScoreMatrix(lambdaHome, lambdaAway, maxGoals = 7) {
 }
 
 function teamStrength(code) {
-  const all = GROUPS.flatMap((group) => group.standings);
+  const all = GROUPS.flatMap((group) => currentStandings(group));
   const row = all.find(([teamCode]) => teamCode === code);
   if (!row) return { gf: 1.2, ga: 1.2 };
   const [, played, wins, draws, losses, gf, ga] = row;
@@ -341,7 +364,7 @@ function estimateRawLambdas(homeCode, awayCode) {
 }
 
 function completedFixtures() {
-  return GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)))
+  return allFixtures()
     .filter((fixture) => fixture.status === '完賽' && Number.isFinite(fixture.homeScore) && Number.isFinite(fixture.awayScore));
 }
 
@@ -407,9 +430,8 @@ function buildRegressionModel() {
   };
 }
 
-const regressionModel = buildRegressionModel();
-
 function applyRegressionCalibration(raw) {
+  const regressionModel = buildRegressionModel();
   const lambdaHome = clamp(raw.lambdaHome * regressionModel.homeFactor * regressionModel.totalFactor, 0.15, 4.8);
   const lambdaAway = clamp(raw.lambdaAway * regressionModel.awayFactor * regressionModel.totalFactor, 0.15, 4.8);
   return { lambdaHome, lambdaAway };
@@ -441,11 +463,12 @@ function renderTabs() {
 }
 
 function renderStandingTable(group) {
+  const standings = currentStandings(group);
   return `
     <table class="standings-table">
       <thead><tr><th>隊伍</th><th>賽</th><th>勝</th><th>平</th><th>負</th><th>進</th><th>失</th><th>淨</th><th>積分</th></tr></thead>
       <tbody>
-        ${group.standings.map(([code, played, wins, draws, losses, gf, ga, gd, points]) => `
+        ${standings.map(([code, played, wins, draws, losses, gf, ga, gd, points]) => `
           <tr>
             <td class="team-cell">${teamLabel(code)}</td>
             <td>${played}</td><td>${wins}</td><td>${draws}</td><td>${losses}</td><td>${gf}</td><td>${ga}</td><td>${gd > 0 ? `+${gd}` : gd}</td><td><strong>${points}</strong></td>
@@ -458,7 +481,8 @@ function renderStandingTable(group) {
 
 function normalizeFixture(item, group) {
   const [date, venue, home, away, status = '未賽', homeScore = null, awayScore = null, events = [], meta = {}] = item;
-  return { id: `${group.id}-${home}-${away}`.toLowerCase(), group: group.name, date, venue, home, away, status, homeScore, awayScore, events, meta };
+  const fixture = { id: `${group.id}-${home}-${away}`.toLowerCase(), groupId: group.id, group: group.name, date, venue, home, away, status, homeScore, awayScore, events, meta };
+  return { ...fixture, ...(state.liveOverrides.get(fixture.id) || {}) };
 }
 
 function isLiveFixture(fixture) {
@@ -473,6 +497,182 @@ function allFixtures() {
   return GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)));
 }
 
+function currentFixturesForGroup(group) {
+  return group.fixtures.map((item) => normalizeFixture(item, group));
+}
+
+function fixtureKey(home, away) {
+  return [home, away].sort().join('-');
+}
+
+function formatEspnDate(date) {
+  return date.toISOString().slice(0, 10).replaceAll('-', '');
+}
+
+function liveScoreboardDates() {
+  const now = new Date();
+  return [-1, 0, 1].map((offset) => {
+    const date = new Date(now);
+    date.setUTCDate(date.getUTCDate() + offset);
+    return formatEspnDate(date);
+  });
+}
+
+function fixtureByTeams() {
+  return new Map(allFixtures().map((fixture) => [fixtureKey(fixture.home, fixture.away), fixture]));
+}
+
+function scoreForCompetition(competition, code) {
+  const competitor = competition?.competitors?.find((item) => item.team?.abbreviation === code);
+  const score = Number(competitor?.score);
+  return Number.isFinite(score) ? score : null;
+}
+
+function eventMinute(detail) {
+  const raw = detail?.clock?.displayValue || detail?.displayClock || '';
+  return raw.replace("'", '') || '時間待確認';
+}
+
+function scoringEventsFromDetails(details = []) {
+  return details
+    .filter((detail) => detail.scoringPlay)
+    .map((detail) => {
+      const code = detail.team?.abbreviation;
+      const scorer = detail.participants?.[0]?.athlete?.displayName || detail.athletes?.[0]?.displayName;
+      const suffix = detail.ownGoal ? '（烏龍球）' : detail.penaltyKick ? '（十二碼）' : '';
+      return [code, eventMinute(detail), `${playerLabel(scorer)}${suffix}`];
+    })
+    .filter(([code]) => TEAM[code]);
+}
+
+async function fetchEspnJson(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`ESPN HTTP ${response.status}`);
+  return response.json();
+}
+
+async function fetchScoreboardEvents() {
+  const urls = liveScoreboardDates().map((date) => `${ESPN_SCOREBOARD_URL}?dates=${date}`);
+  const results = await Promise.allSettled(urls.map(fetchEspnJson));
+  const events = [];
+  for (const result of results) {
+    if (result.status === 'fulfilled') events.push(...(result.value.events || []));
+  }
+  return events;
+}
+
+async function fetchEspnSummary(eventId) {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${encodeURIComponent(eventId)}`;
+  try {
+    return await fetchEspnJson(url);
+  } catch (_error) {
+    return null;
+  }
+}
+
+function buildOverrideFromEspnEvent(event, fixture, summary) {
+  const competition = event.competitions?.[0];
+  const type = event.status?.type || competition?.status?.type || {};
+  const homeScore = scoreForCompetition(competition, fixture.home);
+  const awayScore = scoreForCompetition(competition, fixture.away);
+  const detailEvents = scoringEventsFromDetails(summary?.header?.competitions?.[0]?.details || competition?.details || []);
+  const completed = Boolean(type.completed);
+  const inProgress = type.state === 'in';
+  const status = completed ? '完賽' : inProgress ? '進行中' : fixture.status;
+  const minute = inProgress ? (event.status?.displayClock || competition?.status?.displayClock || type.shortDetail || '進行中') : null;
+  const sourceLink = event.links?.find((link) => link.rel?.includes('summary'))?.href || `https://www.espn.com/soccer/match/_/gameId/${event.id}`;
+
+  if (!completed && !inProgress) return null;
+
+  return {
+    status,
+    homeScore,
+    awayScore,
+    events: detailEvents.length ? detailEvents : fixture.events,
+    meta: {
+      ...fixture.meta,
+      minute,
+      source: 'ESPN 即時比分',
+      sourceUrl: sourceLink,
+      updatedAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      note: completed ? 'ESPN 已標記本場完賽，卡片已回到小組賽欄位。' : 'ESPN 即時資料更新中；完賽後會自動移回小組賽欄位。',
+    },
+  };
+}
+
+async function refreshLiveScores() {
+  try {
+    const fixtures = fixtureByTeams();
+    const events = await fetchScoreboardEvents();
+    const matched = [];
+    for (const event of events) {
+      const competition = event.competitions?.[0];
+      const codes = (competition?.competitors || []).map((item) => item.team?.abbreviation).filter(Boolean);
+      if (codes.length < 2) continue;
+      const fixture = fixtures.get(fixtureKey(codes[0], codes[1]));
+      if (!fixture) continue;
+      const type = event.status?.type || competition?.status?.type || {};
+      if (type.state !== 'in' && !type.completed) continue;
+      matched.push({ event, fixture });
+    }
+
+    const summaries = await Promise.all(matched.map(({ event }) => fetchEspnSummary(event.id)));
+    for (let index = 0; index < matched.length; index += 1) {
+      const { event, fixture } = matched[index];
+      const override = buildOverrideFromEspnEvent(event, fixture, summaries[index]);
+      if (override) state.liveOverrides.set(fixture.id, override);
+    }
+
+    state.lastLiveUpdate = new Date();
+    state.liveError = null;
+    render();
+  } catch (error) {
+    state.liveError = error.message;
+    renderSourceNote();
+  }
+}
+
+function startLivePolling() {
+  refreshLiveScores();
+  window.setInterval(refreshLiveScores, LIVE_REFRESH_MS);
+}
+
+function currentStandings(group) {
+  const seedOrder = new Map(group.standings.map(([code], index) => [code, index]));
+  const rows = new Map(group.standings.map(([code]) => [code, { code, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, points: 0 }]));
+  for (const fixture of currentFixturesForGroup(group)) {
+    if (fixture.status !== '完賽' || !hasScore(fixture)) continue;
+    const home = rows.get(fixture.home);
+    const away = rows.get(fixture.away);
+    if (!home || !away) continue;
+    home.played += 1;
+    away.played += 1;
+    home.gf += fixture.homeScore;
+    home.ga += fixture.awayScore;
+    away.gf += fixture.awayScore;
+    away.ga += fixture.homeScore;
+    if (fixture.homeScore > fixture.awayScore) {
+      home.wins += 1;
+      home.points += 3;
+      away.losses += 1;
+    } else if (fixture.homeScore < fixture.awayScore) {
+      away.wins += 1;
+      away.points += 3;
+      home.losses += 1;
+    } else {
+      home.draws += 1;
+      away.draws += 1;
+      home.points += 1;
+      away.points += 1;
+    }
+  }
+
+  return [...rows.values()]
+    .map((row) => ({ ...row, gd: row.gf - row.ga }))
+    .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf || seedOrder.get(a.code) - seedOrder.get(b.code))
+    .map((row) => [row.code, row.played, row.wins, row.draws, row.losses, row.gf, row.ga, row.gd, row.points]);
+}
+
 function renderSummary(fixture) {
   if (fixture.status !== '完賽' && !isLiveFixture(fixture)) return '';
   const rows = fixture.events.length
@@ -481,8 +681,11 @@ function renderSummary(fixture) {
   const liveNote = isLiveFixture(fixture) && fixture.meta.note
     ? `<p class="live-note">${fixture.meta.note}</p>`
     : '';
-  const source = isLiveFixture(fixture) && fixture.meta.source
-    ? `<p class="small-text">即時來源：${fixture.meta.source}｜更新：${fixture.meta.updatedAt}</p>`
+  const sourceLabel = fixture.meta.sourceUrl
+    ? `<a href="${fixture.meta.sourceUrl}" target="_blank" rel="noreferrer">${fixture.meta.source}</a>`
+    : fixture.meta.source;
+  const source = (isLiveFixture(fixture) || fixture.meta.sourceUrl) && fixture.meta.source
+    ? `<p class="small-text">資料來源：${sourceLabel}｜更新：${fixture.meta.updatedAt || '載入時'}</p>`
     : '';
   const title = hasScore(fixture)
     ? `${team(fixture.home).name} ${fixture.homeScore}-${fixture.awayScore} ${team(fixture.away).name}`
@@ -548,7 +751,7 @@ function renderFixtureCard(fixture) {
 function renderGroups() {
   const liveFixtures = allFixtures().filter(isLiveFixture);
   $('content').innerHTML = `${renderLiveFixtures(liveFixtures)}${renderRegressionPanel()}${GROUPS.map((group) => {
-    const fixtures = group.fixtures.map((item) => normalizeFixture(item, group)).filter((fixture) => !isLiveFixture(fixture));
+    const fixtures = currentFixturesForGroup(group).filter((fixture) => !isLiveFixture(fixture));
     return `
       <section class="group-section">
         <div class="group-header">
@@ -579,6 +782,7 @@ function renderLiveFixtures(fixtures) {
 }
 
 function renderRegressionPanel() {
+  const regressionModel = buildRegressionModel();
   const confidence = pct(regressionModel.credibility);
   const before = regressionModel.maeBefore === null ? '尚無資料' : regressionModel.maeBefore.toFixed(2);
   const after = regressionModel.maeAfter === null ? '尚無資料' : regressionModel.maeAfter.toFixed(2);
@@ -621,7 +825,11 @@ function renderEmptyKnockout(tabId) {
 }
 
 function renderSourceNote() {
-  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；完賽與進行中摘要依 Guardian、FOX Sports、NBC Sports、ABC Score Centre、AP 相關報導人工校對。每新增一場完賽資料，頁面載入時會重新回歸校正未賽預測。';
+  const liveStatus = state.lastLiveUpdate
+    ? `即時比分最近同步：${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}。`
+    : '即時比分同步中。';
+  const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
+  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${error}`;
 }
 
 function render() {
@@ -647,3 +855,4 @@ document.addEventListener('click', (event) => {
 });
 
 render();
+startLivePolling();
