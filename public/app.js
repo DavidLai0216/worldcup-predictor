@@ -336,9 +336,17 @@ function predictMatch(homeCode, awayCode) {
   const away = teamStrength(awayCode);
   const lambdaHome = clamp(1.18 * home.gf * away.ga, 0.25, 4.2);
   const lambdaAway = clamp(1.08 * away.gf * home.ga, 0.25, 4.2);
-  return buildScoreMatrix(lambdaHome, lambdaAway)
+  const matrix = buildScoreMatrix(lambdaHome, lambdaAway);
+  const outcome = matrix.reduce((totals, cell) => {
+    if (cell.homeGoals > cell.awayGoals) totals.home += cell.probability;
+    else if (cell.homeGoals < cell.awayGoals) totals.away += cell.probability;
+    else totals.draw += cell.probability;
+    return totals;
+  }, { home: 0, draw: 0, away: 0 });
+  const scores = matrix
     .sort((a, b) => b.probability - a.probability)
-    .slice(0, 3);
+    .slice(0, 10);
+  return { scores, outcome, lambdaHome, lambdaAway };
 }
 
 function renderTabs() {
@@ -388,12 +396,26 @@ function renderSummary(fixture) {
 function renderPrediction(fixture) {
   if (fixture.status === '完賽') return `<div class="scoreline">${fixture.homeScore}-${fixture.awayScore}</div><p class="small-text">已完賽</p>`;
   if (fixture.status === '進行中') return '<div class="scoreline live-text">進行中</div><p class="small-text">等待完賽後更新摘要</p>';
-  const scores = predictMatch(fixture.home, fixture.away);
+  const prediction = predictMatch(fixture.home, fixture.away);
+  const best = prediction.scores[0];
   return `
-    <div class="prediction-list">
-      ${scores.map((score) => `<span>${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
+    <div class="prediction-summary">
+      <div>
+        <p class="label">最可能比分</p>
+        <strong>${best.homeGoals}-${best.awayGoals}</strong>
+        <small>${pct(best.probability)}</small>
+      </div>
+      <div class="outcome-grid">
+        <span><b>${pct(prediction.outcome.home)}</b><small>${team(fixture.home).name}勝</small></span>
+        <span><b>${pct(prediction.outcome.draw)}</b><small>平手</small></span>
+        <span><b>${pct(prediction.outcome.away)}</b><small>${team(fixture.away).name}勝</small></span>
+      </div>
     </div>
-    <p class="small-text">模型預測｜資料來源：種子市場</p>
+    <p class="small-text">Top 10 比分候選</p>
+    <div class="prediction-list">
+      ${prediction.scores.map((score, index) => `<span class="${index === 0 ? 'best-pick' : ''}">${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
+    </div>
+    <p class="small-text">模型預測｜λ：${prediction.lambdaHome.toFixed(2)} / ${prediction.lambdaAway.toFixed(2)}｜資料來源：種子市場</p>
   `;
 }
 
