@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-06-17T07:50:28.306Z",
-  "policy": "優先顯示該國足球球迷的可追溯授權真實照片；沒有足球照片時，可使用該國其他運動的成年女性球迷或觀眾真實照片；仍未找到時，使用該國2026世足代表明星球員的可追溯真實肖像。未能確認時標示待補，不使用 AI、SVG 或示意圖。",
+  "updatedAt": "2026-06-17T07:59:53.721Z",
+  "policy": "優先顯示該國足球球迷的可追溯授權真實近景照片；遠景球迷群或無法明確辨識個人的女性球迷照不使用。沒有合格足球球迷照時，可使用該國其他運動的成年女性球迷或觀眾近景照片；仍未找到時，使用該國2026世足代表明星球員的可追溯真實肖像；球員肖像也找不到時，使用該國最廣為人知的景物或建築照片。未能確認時標示待補，不使用 AI、SVG 或示意圖。",
   "teams": {
     "MEX": {
       "team": "墨西哥",
@@ -227,15 +227,16 @@
     "GER": {
       "team": "德國",
       "searchQuery": "Germany adult woman football fan portrait World Cup supporter",
-      "source": "Wikimedia Commons",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Österreich_vs._Deutschland_(2026-04-18_WM-Qualifikation_Europa_Frauen)_08.jpg",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/08/%C3%96sterreich_vs._Deutschland_%282026-04-18_WM-Qualifikation_Europa_Frauen%29_08.jpg",
+      "source": "Wikimedia projects",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Jamal_Musiala",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/44/Jamal_Musiala_2022_%28cropped%29.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "real",
-      "description": "WM Qualifikationsspiel",
-      "license": "CC BY-SA 4.0",
-      "sport": "football"
+      "kind": "player",
+      "description": "German footballer (born 2003)",
+      "license": null,
+      "sport": "football",
+      "playerName": "Jamal Musiala"
     },
     "CUW": {
       "team": "庫拉索",
@@ -282,15 +283,16 @@
     "NED": {
       "team": "荷蘭",
       "searchQuery": "Netherlands adult woman football fan portrait World Cup supporter",
-      "source": "Wikimedia Commons",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dutch_Fans_20190611.jpg",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/31/Dutch_Fans_20190611.jpg",
+      "source": "Wikimedia projects",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Virgil_van_Dijk",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5d/20160604_AUT_NED_8876_%28cropped%29.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "real",
-      "description": "FIFA Women's World Cup 2019 - Dutch Fans in Le Havre",
-      "license": "CC BY 4.0",
-      "sport": "football"
+      "kind": "player",
+      "description": "Dutch footballer (born 1991)",
+      "license": null,
+      "sport": "football",
+      "playerName": "Virgil van Dijk"
     },
     "JPN": {
       "team": "日本",
@@ -356,7 +358,7 @@
       "completedImageUrl": null,
       "updatedAfter": null,
       "kind": "player",
-      "description": "Egyptian footballer Mohamed Salah",
+      "description": "Egyptian footballer (born 1992)",
       "license": null,
       "playerName": "Mohamed Salah",
       "sport": "football"
@@ -370,7 +372,7 @@
       "completedImageUrl": null,
       "updatedAfter": null,
       "kind": "real",
-      "description": "Iranian football fan at an Angola-Iran game",
+      "description": "Iranian football fan at an Angola–Iran game",
       "license": "CC BY 2.0",
       "sport": "football"
     },
@@ -397,7 +399,7 @@
       "completedImageUrl": null,
       "updatedAfter": null,
       "kind": "player",
-      "description": "Spanish footballer Lamine Yamal",
+      "description": "Spanish footballer (born 2007)",
       "license": null,
       "playerName": "Lamine Yamal",
       "sport": "football"
@@ -411,7 +413,7 @@
       "completedImageUrl": null,
       "updatedAfter": null,
       "kind": "player",
-      "description": "Cape Verdean footballer Ryan Mendes",
+      "description": "Cape Verdean footballer (born 1990)",
       "license": null,
       "playerName": "Ryan Mendes",
       "sport": "football"
@@ -517,28 +519,30 @@
     "ALG": {
       "team": "阿爾及利亞",
       "searchQuery": "Algeria adult woman football fan portrait World Cup supporter",
-      "source": "Wikimedia Commons",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Algerian_football_clubs_seek_female_fans.jpg",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Algerian_football_clubs_seek_female_fans.jpg",
+      "source": "Wikimedia projects",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Riyad_Mahrez",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/Mahrez_2021.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "real",
-      "description": "Algerian women enjoy a football match.",
-      "license": "CC BY 2.0",
-      "sport": "football"
+      "kind": "player",
+      "description": "Algerian footballer (born 1991)",
+      "license": null,
+      "sport": "football",
+      "playerName": "Riyad Mahrez"
     },
     "AUT": {
       "team": "奧地利",
       "searchQuery": "Austria adult woman football fan portrait World Cup supporter",
-      "source": "Wikimedia Commons",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C3%96sterreich_vs._Deutschland_(2026-04-18_WM-Qualifikation_Europa_Frauen)_07.jpg",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/79/%C3%96sterreich_vs._Deutschland_%282026-04-18_WM-Qualifikation_Europa_Frauen%29_07.jpg",
+      "source": "Wikimedia projects",
+      "sourceUrl": "https://en.wikipedia.org/wiki/David_Alaba",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/20180610_FIFA_Friendly_Match_Austria_vs._Brazil_David_Alaba_850_1632.jpg",
       "completedImageUrl": null,
       "updatedAfter": null,
-      "kind": "real",
-      "description": "Austria vs Germany women World Cup qualification supporters.",
-      "license": "CC BY-SA 4.0",
-      "sport": "football"
+      "kind": "player",
+      "description": "Austrian footballer (born 1992)",
+      "license": null,
+      "sport": "football",
+      "playerName": "David Alaba"
     },
     "JOR": {
       "team": "約旦",

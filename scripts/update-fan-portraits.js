@@ -9,18 +9,16 @@ const ACCEPTED_TERMS = /\b(female|women|woman|women's)\b/i;
 const SPORTS_TERMS = /\b(football|soccer|sport|sports|fan|fans|supporter|supporters|spectator|spectators|match|game|cup|basketball|baseball|volleyball|rugby|tennis|hockey|cricket|olympic)\b/i;
 
 const CURATED_COMMONS_FILES = {
-  ALG: { title: 'File:Algerian football clubs seek female fans.jpg', sport: 'football' },
-  AUT: { title: 'File:Österreich vs. Deutschland (2026-04-18 WM-Qualifikation Europa Frauen) 07.jpg', sport: 'football' },
-  GER: { title: 'File:Österreich vs. Deutschland (2026-04-18 WM-Qualifikation Europa Frauen) 08.jpg', sport: 'football' },
   IRN: { title: 'File:Iranian female football fan.jpg', sport: 'football' },
   JPN: { title: 'File:World cup - japanese girl.jpg', sport: 'football' },
-  NED: { title: 'File:Dutch Fans 20190611.jpg', sport: 'football' },
   RSA: { title: 'File:FIFA World Cup Fans 3.jpg', sport: 'football' },
   USA: { title: 'File:Fans painted with Equal Pay and rainbow flags (48675274007).jpg', sport: 'football' },
 };
 
 const PLAYER_FALLBACKS = {
+  ALG: 'Riyad Mahrez',
   AUS: 'Mathew Ryan',
+  AUT: 'David Alaba',
   BEL: 'Kevin De Bruyne',
   BIH: 'Edin Džeko',
   BRA: 'Vinícius Júnior',
@@ -37,6 +35,7 @@ const PLAYER_FALLBACKS = {
   ENG: 'Jude Bellingham',
   ESP: 'Lamine Yamal',
   FRA: 'Kylian Mbappé',
+  GER: 'Jamal Musiala',
   GHA: 'Mohammed Kudus',
   HAI: 'Duckens Nazon',
   IRQ: 'Aymen Hussein',
@@ -46,6 +45,7 @@ const PLAYER_FALLBACKS = {
   MAR: 'Achraf Hakimi',
   MEX: 'Santiago Giménez',
   ARG: 'Lionel Messi',
+  NED: 'Virgil van Dijk',
   NOR: 'Erling Haaland',
   NZL: 'Chris Wood (footballer, born 1991)',
   PAN: 'Adalberto Carrasquilla',
@@ -60,6 +60,57 @@ const PLAYER_FALLBACKS = {
   TUR: 'Hakan Çalhanoğlu',
   URU: 'Federico Valverde',
   UZB: 'Eldor Shomurodov',
+};
+
+const LANDMARK_FALLBACKS = {
+  ARG: 'Obelisco de Buenos Aires',
+  ALG: 'Maqam Echahid',
+  AUS: 'Sydney Opera House',
+  AUT: 'Schönbrunn Palace',
+  BEL: 'Atomium',
+  BIH: 'Stari Most',
+  BRA: 'Christ the Redeemer (statue)',
+  CAN: 'CN Tower',
+  CIV: 'Basilica of Our Lady of Peace',
+  COD: 'Mount Nyiragongo',
+  COL: 'Las Lajas Sanctuary',
+  CPV: 'Pico do Fogo',
+  CRO: 'Dubrovnik',
+  CUW: 'Handelskade',
+  CZE: 'Charles Bridge',
+  ECU: 'Mitad del Mundo',
+  EGY: 'Great Pyramid of Giza',
+  ENG: 'Tower Bridge',
+  ESP: 'Sagrada Família',
+  FRA: 'Eiffel Tower',
+  GER: 'Brandenburg Gate',
+  GHA: 'Independence Arch (Accra)',
+  HAI: 'Citadelle Laferrière',
+  IRN: 'Azadi Tower',
+  IRQ: 'Great Mosque of Samarra',
+  JOR: 'Petra',
+  JPN: 'Mount Fuji',
+  KOR: 'Gyeongbokgung',
+  KSA: 'Kingdom Centre',
+  MAR: 'Hassan II Mosque',
+  MEX: 'Chichen Itza',
+  NED: 'Rijksmuseum',
+  NOR: 'Bryggen',
+  NZL: 'Sky Tower (Auckland)',
+  PAN: 'Panama Canal',
+  PAR: 'Palacio de los López',
+  POR: 'Belém Tower',
+  QAT: 'Museum of Islamic Art, Doha',
+  RSA: 'Table Mountain',
+  SCO: 'Edinburgh Castle',
+  SEN: 'African Renaissance Monument',
+  SUI: 'Matterhorn',
+  SWE: 'Stockholm City Hall',
+  TUN: 'Amphitheatre of El Jem',
+  TUR: 'Hagia Sophia',
+  URU: 'Palacio Salvo',
+  USA: 'Statue of Liberty',
+  UZB: 'Registan',
 };
 
 function isImageUrl(url) {
@@ -168,6 +219,27 @@ async function getPlayerFallback(code) {
   };
 }
 
+async function getLandmarkFallback(code) {
+  const landmarkName = LANDMARK_FALLBACKS[code];
+  if (!landmarkName) return null;
+  const url = new URL(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(landmarkName.replaceAll(' ', '_'))}`);
+  const response = await fetch(url, { headers: { 'User-Agent': 'worldcup-predictor/0.1' } });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  const imageUrl = payload.originalimage?.source || payload.thumbnail?.source;
+  if (!isImageUrl(imageUrl)) return null;
+  return {
+    kind: 'landmark',
+    source: 'Wikimedia projects',
+    sourceUrl: payload.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(landmarkName.replaceAll(' ', '_'))}`,
+    imageUrl,
+    landmarkName: payload.title || landmarkName,
+    description: payload.description || payload.extract || `${landmarkName} landmark`,
+    license: null,
+    sport: null,
+  };
+}
+
 async function main() {
   const data = JSON.parse(await fs.readFile(DATA_PATH, 'utf8'));
   let updated = 0;
@@ -178,6 +250,7 @@ async function main() {
       ? await getCommonsFile(curated.title)
       : null;
     if (!result) result = await getPlayerFallback(code);
+    if (!result) result = await getLandmarkFallback(code);
     if (!result) continue;
     data.teams[code] = {
       ...entry,
