@@ -331,11 +331,93 @@ function teamStrength(code) {
   };
 }
 
-function predictMatch(homeCode, awayCode) {
+function estimateRawLambdas(homeCode, awayCode) {
   const home = teamStrength(homeCode);
   const away = teamStrength(awayCode);
-  const lambdaHome = clamp(1.18 * home.gf * away.ga, 0.25, 4.2);
-  const lambdaAway = clamp(1.08 * away.gf * home.ga, 0.25, 4.2);
+  return {
+    lambdaHome: clamp(1.18 * home.gf * away.ga, 0.25, 4.2),
+    lambdaAway: clamp(1.08 * away.gf * home.ga, 0.25, 4.2),
+  };
+}
+
+function completedFixtures() {
+  return GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)))
+    .filter((fixture) => fixture.status === '完賽' && Number.isFinite(fixture.homeScore) && Number.isFinite(fixture.awayScore));
+}
+
+function fitGoalFactor(samples, predictedKey, actualKey) {
+  const numerator = samples.reduce((sum, sample) => sum + sample[predictedKey] * sample[actualKey], 0);
+  const denominator = samples.reduce((sum, sample) => sum + sample[predictedKey] * sample[predictedKey], 0);
+  if (denominator <= 0) return 1;
+  return clamp(numerator / denominator, 0.65, 1.45);
+}
+
+function meanAbsoluteError(samples, homeFactor = 1, awayFactor = 1) {
+  if (!samples.length) return null;
+  const total = samples.reduce((sum, sample) => {
+    const homeError = Math.abs(sample.predictedHome * homeFactor - sample.actualHome);
+    const awayError = Math.abs(sample.predictedAway * awayFactor - sample.actualAway);
+    return sum + homeError + awayError;
+  }, 0);
+  return total / (samples.length * 2);
+}
+
+function buildRegressionModel() {
+  const samples = completedFixtures().map((fixture) => {
+    const raw = estimateRawLambdas(fixture.home, fixture.away);
+    return {
+      fixture,
+      predictedHome: raw.lambdaHome,
+      predictedAway: raw.lambdaAway,
+      actualHome: fixture.homeScore,
+      actualAway: fixture.awayScore,
+    };
+  });
+
+  if (!samples.length) {
+    return {
+      sampleCount: 0,
+      credibility: 0,
+      homeFactor: 1,
+      awayFactor: 1,
+      totalFactor: 1,
+      maeBefore: null,
+      maeAfter: null,
+    };
+  }
+
+  const fittedHomeFactor = fitGoalFactor(samples, 'predictedHome', 'actualHome');
+  const fittedAwayFactor = fitGoalFactor(samples, 'predictedAway', 'actualAway');
+  const predictedTotal = samples.reduce((sum, sample) => sum + sample.predictedHome + sample.predictedAway, 0);
+  const actualTotal = samples.reduce((sum, sample) => sum + sample.actualHome + sample.actualAway, 0);
+  const fittedTotalFactor = predictedTotal > 0 ? clamp(actualTotal / predictedTotal, 0.65, 1.45) : 1;
+  const credibility = clamp(samples.length / 24, 0, 1);
+  const homeFactor = 1 + (fittedHomeFactor - 1) * credibility;
+  const awayFactor = 1 + (fittedAwayFactor - 1) * credibility;
+  const totalFactor = 1 + (fittedTotalFactor - 1) * credibility;
+
+  return {
+    sampleCount: samples.length,
+    credibility,
+    homeFactor,
+    awayFactor,
+    totalFactor,
+    maeBefore: meanAbsoluteError(samples),
+    maeAfter: meanAbsoluteError(samples, homeFactor * totalFactor, awayFactor * totalFactor),
+  };
+}
+
+const regressionModel = buildRegressionModel();
+
+function applyRegressionCalibration(raw) {
+  const lambdaHome = clamp(raw.lambdaHome * regressionModel.homeFactor * regressionModel.totalFactor, 0.15, 4.8);
+  const lambdaAway = clamp(raw.lambdaAway * regressionModel.awayFactor * regressionModel.totalFactor, 0.15, 4.8);
+  return { lambdaHome, lambdaAway };
+}
+
+function predictMatch(homeCode, awayCode) {
+  const raw = estimateRawLambdas(homeCode, awayCode);
+  const { lambdaHome, lambdaAway } = applyRegressionCalibration(raw);
   const matrix = buildScoreMatrix(lambdaHome, lambdaAway);
   const outcome = matrix.reduce((totals, cell) => {
     if (cell.homeGoals > cell.awayGoals) totals.home += cell.probability;
@@ -346,7 +428,7 @@ function predictMatch(homeCode, awayCode) {
   const scores = matrix
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 10);
-  return { scores, outcome, lambdaHome, lambdaAway };
+  return { scores, outcome, lambdaHome, lambdaAway, rawLambdaHome: raw.lambdaHome, rawLambdaAway: raw.lambdaAway };
 }
 
 function renderTabs() {
@@ -415,7 +497,7 @@ function renderPrediction(fixture) {
     <div class="prediction-list">
       ${prediction.scores.map((score, index) => `<span class="${index === 0 ? 'best-pick' : ''}">${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
     </div>
-    <p class="small-text">模型預測｜λ：${prediction.lambdaHome.toFixed(2)} / ${prediction.lambdaAway.toFixed(2)}｜資料來源：種子市場</p>
+    <p class="small-text">模型預測｜校正後 λ：${prediction.lambdaHome.toFixed(2)} / ${prediction.lambdaAway.toFixed(2)}｜原始 λ：${prediction.rawLambdaHome.toFixed(2)} / ${prediction.rawLambdaAway.toFixed(2)}</p>
   `;
 }
 
@@ -437,7 +519,7 @@ function renderFixtureCard(fixture) {
 }
 
 function renderGroups() {
-  $('content').innerHTML = GROUPS.map((group) => {
+  $('content').innerHTML = `${renderRegressionPanel()}${GROUPS.map((group) => {
     const fixtures = group.fixtures.map((item) => normalizeFixture(item, group));
     return `
       <section class="group-section">
@@ -449,7 +531,30 @@ function renderGroups() {
         <div class="fixtures">${fixtures.map(renderFixtureCard).join('')}</div>
       </section>
     `;
-  }).join('');
+  }).join('')}`;
+}
+
+function renderRegressionPanel() {
+  const confidence = pct(regressionModel.credibility);
+  const before = regressionModel.maeBefore === null ? '尚無資料' : regressionModel.maeBefore.toFixed(2);
+  const after = regressionModel.maeAfter === null ? '尚無資料' : regressionModel.maeAfter.toFixed(2);
+  return `
+    <section class="regression-panel">
+      <div>
+        <p class="eyebrow">賽後迴歸校正</p>
+        <h2>每場完賽後自動重算預測偏差</h2>
+        <p>系統會比對原始賽前 λ 與實際比分，估計目前模型是否高估或低估主隊、客隊與總進球，並套用到所有未賽場次。</p>
+      </div>
+      <div class="regression-grid">
+        <span><b>${regressionModel.sampleCount}</b><small>已完賽樣本</small></span>
+        <span><b>${regressionModel.homeFactor.toFixed(2)}</b><small>主隊校正</small></span>
+        <span><b>${regressionModel.awayFactor.toFixed(2)}</b><small>客隊校正</small></span>
+        <span><b>${regressionModel.totalFactor.toFixed(2)}</b><small>總進球校正</small></span>
+        <span><b>${confidence}</b><small>校正權重</small></span>
+        <span><b>${before} → ${after}</b><small>平均進球誤差</small></span>
+      </div>
+    </section>
+  `;
 }
 
 function renderEmptyKnockout(tabId) {
@@ -472,7 +577,7 @@ function renderEmptyKnockout(tabId) {
 }
 
 function renderSourceNote() {
-  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；I 組完賽比分與摘要依 Guardian、FOX Sports、AP 相關報導人工校對。';
+  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；I 組完賽比分與摘要依 Guardian、FOX Sports、AP 相關報導人工校對。每新增一場完賽資料，頁面載入時會重新回歸校正未賽預測。';
 }
 
 function render() {

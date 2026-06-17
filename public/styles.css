@@ -116,6 +116,59 @@ button.tab {
   margin-bottom: 16px;
 }
 
+.regression-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr);
+  gap: 16px;
+  align-items: center;
+  background: #0f2f2b;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.regression-panel .eyebrow {
+  color: #9ad8ce;
+}
+
+.regression-panel h2 {
+  margin-bottom: 8px;
+}
+
+.regression-panel p {
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.regression-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.regression-grid span {
+  display: grid;
+  gap: 4px;
+  min-height: 74px;
+  align-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.regression-grid b {
+  font-size: 22px;
+}
+
+.regression-grid small {
+  color: rgba(255, 255, 255, 0.68);
+  font-weight: 800;
+}
+
 .inactive-stage {
   background: #f8fafc;
   color: #7a8494;
@@ -375,8 +428,13 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .regression-panel,
   .prediction-summary {
     grid-template-columns: 1fr;
+  }
+
+  .regression-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .source-pill {
