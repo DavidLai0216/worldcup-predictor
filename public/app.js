@@ -1,118 +1,297 @@
 const $ = (id) => document.getElementById(id);
 
-const FIXTURES = [
+const TEAM = {
+  MEX: { name: '墨西哥', flag: '🇲🇽' },
+  RSA: { name: '南非', flag: '🇿🇦' },
+  KOR: { name: '韓國', flag: '🇰🇷' },
+  CZE: { name: '捷克', flag: '🇨🇿' },
+  CAN: { name: '加拿大', flag: '🇨🇦' },
+  BIH: { name: '波士尼亞與赫塞哥維納', flag: '🇧🇦' },
+  QAT: { name: '卡達', flag: '🇶🇦' },
+  SUI: { name: '瑞士', flag: '🇨🇭' },
+  BRA: { name: '巴西', flag: '🇧🇷' },
+  MAR: { name: '摩洛哥', flag: '🇲🇦' },
+  SCO: { name: '蘇格蘭', flag: '🏴' },
+  HAI: { name: '海地', flag: '🇭🇹' },
+  USA: { name: '美國', flag: '🇺🇸' },
+  PAR: { name: '巴拉圭', flag: '🇵🇾' },
+  AUS: { name: '澳洲', flag: '🇦🇺' },
+  TUR: { name: '土耳其', flag: '🇹🇷' },
+  GER: { name: '德國', flag: '🇩🇪' },
+  CUW: { name: '庫拉索', flag: '🇨🇼' },
+  CIV: { name: '象牙海岸', flag: '🇨🇮' },
+  ECU: { name: '厄瓜多', flag: '🇪🇨' },
+  NED: { name: '荷蘭', flag: '🇳🇱' },
+  JPN: { name: '日本', flag: '🇯🇵' },
+  SWE: { name: '瑞典', flag: '🇸🇪' },
+  TUN: { name: '突尼西亞', flag: '🇹🇳' },
+  BEL: { name: '比利時', flag: '🇧🇪' },
+  EGY: { name: '埃及', flag: '🇪🇬' },
+  IRN: { name: '伊朗', flag: '🇮🇷' },
+  NZL: { name: '紐西蘭', flag: '🇳🇿' },
+  ESP: { name: '西班牙', flag: '🇪🇸' },
+  CPV: { name: '維德角', flag: '🇨🇻' },
+  KSA: { name: '沙烏地阿拉伯', flag: '🇸🇦' },
+  URU: { name: '烏拉圭', flag: '🇺🇾' },
+  FRA: { name: '法國', flag: '🇫🇷' },
+  SEN: { name: '塞內加爾', flag: '🇸🇳' },
+  IRQ: { name: '伊拉克', flag: '🇮🇶' },
+  NOR: { name: '挪威', flag: '🇳🇴' },
+  ARG: { name: '阿根廷', flag: '🇦🇷' },
+  ALG: { name: '阿爾及利亞', flag: '🇩🇿' },
+  AUT: { name: '奧地利', flag: '🇦🇹' },
+  JOR: { name: '約旦', flag: '🇯🇴' },
+  POR: { name: '葡萄牙', flag: '🇵🇹' },
+  COD: { name: '剛果民主共和國', flag: '🇨🇩' },
+  UZB: { name: '烏茲別克', flag: '🇺🇿' },
+  COL: { name: '哥倫比亞', flag: '🇨🇴' },
+  ENG: { name: '英格蘭', flag: '🏴' },
+  CRO: { name: '克羅埃西亞', flag: '🇭🇷' },
+  GHA: { name: '迦納', flag: '🇬🇭' },
+  PAN: { name: '巴拿馬', flag: '🇵🇦' },
+};
+
+const GROUPS = [
   {
-    id: 'mex-rsa',
-    group: 'Group A',
-    kickoff: '2026-06-11 19:00',
-    venue: 'Mexico City Stadium',
-    home: 'Mexico',
-    away: 'South Africa',
-    seedMarket: { home: 0.55, draw: 0.27, away: 0.18 },
-    homeRecord: { games: 5, goalsFor: 9, goalsAgainst: 4 },
-    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+    id: 'A',
+    name: 'A 組',
+    standings: [
+      ['MEX', 1, 1, 0, 0, 2, 0, 2, 3],
+      ['KOR', 1, 1, 0, 0, 2, 1, 1, 3],
+      ['CZE', 1, 0, 0, 1, 1, 2, -1, 0],
+      ['RSA', 1, 0, 0, 1, 0, 2, -2, 0],
+    ],
+    fixtures: [
+      ['2026-06-11', '墨西哥城', 'MEX', 'RSA', '完賽', 2, 0, [['MEX', '9', '朱利安・奎尼奧內斯'], ['MEX', '67', '勞爾・希門尼斯']]],
+      ['2026-06-11', '瓜達拉哈拉', 'KOR', 'CZE', '完賽', 2, 1, [['CZE', '時間待補', '拉迪斯拉夫・克雷伊奇'], ['KOR', '時間待補', '黃仁範'], ['KOR', '79', '吳賢揆']]],
+      ['2026-06-18 12:00', '亞特蘭大', 'CZE', 'RSA'],
+      ['2026-06-18 21:00', '墨西哥城', 'MEX', 'KOR'],
+      ['2026-06-24 21:00', '墨西哥城', 'CZE', 'MEX'],
+      ['2026-06-24 21:00', '瓜達拉哈拉', 'RSA', 'KOR'],
+    ],
   },
   {
-    id: 'kor-cze',
-    group: 'Group A',
-    kickoff: '2026-06-11 22:00',
-    venue: 'Guadalajara Stadium',
-    home: 'Korea Republic',
-    away: 'Czechia',
-    seedMarket: { home: 0.34, draw: 0.29, away: 0.37 },
-    homeRecord: { games: 5, goalsFor: 8, goalsAgainst: 5 },
-    awayRecord: { games: 5, goalsFor: 7, goalsAgainst: 5 },
+    id: 'B',
+    name: 'B 組',
+    standings: [
+      ['CAN', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['BIH', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['QAT', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['SUI', 1, 0, 1, 0, 1, 1, 0, 1],
+    ],
+    fixtures: [
+      ['2026-06-12', '多倫多', 'CAN', 'BIH', '完賽', 1, 1, [['CAN', '時間待補', '進球者待補'], ['BIH', '時間待補', '進球者待補']]],
+      ['2026-06-13', '舊金山灣區', 'QAT', 'SUI', '完賽', 1, 1, [['QAT', '時間待補', '進球者待補'], ['SUI', '時間待補', '進球者待補']]],
+      ['2026-06-18 15:00', '舊金山灣區', 'SUI', 'BIH'],
+      ['2026-06-18 18:00', '多倫多', 'CAN', 'QAT'],
+      ['2026-06-24 15:00', '溫哥華', 'SUI', 'CAN'],
+      ['2026-06-24 15:00', '西雅圖', 'BIH', 'QAT'],
+    ],
   },
   {
-    id: 'can-bih',
-    group: 'Group B',
-    kickoff: '2026-06-12 19:00',
-    venue: 'Toronto Stadium',
-    home: 'Canada',
-    away: 'Bosnia and Herzegovina',
-    seedMarket: { home: 0.42, draw: 0.28, away: 0.30 },
-    homeRecord: { games: 5, goalsFor: 8, goalsAgainst: 6 },
-    awayRecord: { games: 5, goalsFor: 7, goalsAgainst: 6 },
+    id: 'C',
+    name: 'C 組',
+    standings: [
+      ['SCO', 1, 1, 0, 0, 1, 0, 1, 3],
+      ['MAR', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['BRA', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['HAI', 1, 0, 0, 1, 0, 1, -1, 0],
+    ],
+    fixtures: [
+      ['2026-06-13', '費城', 'BRA', 'MAR', '完賽', 1, 1, [['BRA', '時間待補', '進球者待補'], ['MAR', '時間待補', '進球者待補']]],
+      ['2026-06-13', '波士頓', 'SCO', 'HAI', '完賽', 1, 0, [['SCO', '時間待補', '進球者待補']]],
+      ['2026-06-19 18:00', '波士頓', 'SCO', 'MAR'],
+      ['2026-06-19 21:00', '邁阿密', 'BRA', 'HAI'],
+      ['2026-06-24 18:00', '邁阿密', 'SCO', 'BRA'],
+      ['2026-06-24 18:00', '費城', 'MAR', 'HAI'],
+    ],
   },
   {
-    id: 'usa-par',
-    group: 'Group D',
-    kickoff: '2026-06-12 22:00',
-    venue: 'Los Angeles Stadium',
-    home: 'United States',
-    away: 'Paraguay',
-    seedMarket: { home: 0.50, draw: 0.27, away: 0.23 },
-    homeRecord: { games: 5, goalsFor: 10, goalsAgainst: 5 },
-    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+    id: 'D',
+    name: 'D 組',
+    standings: [
+      ['USA', 1, 1, 0, 0, 4, 1, 3, 3],
+      ['AUS', 1, 1, 0, 0, 2, 0, 2, 3],
+      ['TUR', 1, 0, 0, 1, 0, 2, -2, 0],
+      ['PAR', 1, 0, 0, 1, 1, 4, -3, 0],
+    ],
+    fixtures: [
+      ['2026-06-12', '洛杉磯', 'USA', 'PAR', '完賽', 4, 1, [['USA', '時間待補', '巴拉圭烏龍球'], ['USA', '上半場', '佛拉林・巴洛根'], ['USA', '上半場', '佛拉林・巴洛根'], ['PAR', '時間待補', '毛里西奧'], ['USA', '補時', '喬瓦尼・雷納']]],
+      ['2026-06-13', '溫哥華', 'AUS', 'TUR', '完賽', 2, 0, [['AUS', '時間待補', '進球者待補'], ['AUS', '時間待補', '進球者待補']]],
+      ['2026-06-19 15:00', '西雅圖', 'USA', 'AUS'],
+      ['2026-06-19 24:00', '堪薩斯城', 'TUR', 'PAR'],
+      ['2026-06-25 22:00', '洛杉磯', 'TUR', 'USA'],
+      ['2026-06-25 22:00', '溫哥華', 'PAR', 'AUS'],
+    ],
   },
   {
-    id: 'ger-cur',
-    group: 'Group E',
-    kickoff: '2026-06-14 12:00',
-    venue: 'Houston Stadium',
-    home: 'Germany',
-    away: 'Curacao',
-    seedMarket: { home: 0.74, draw: 0.17, away: 0.09 },
-    homeRecord: { games: 5, goalsFor: 12, goalsAgainst: 5 },
-    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 9 },
+    id: 'E',
+    name: 'E 組',
+    standings: [
+      ['GER', 1, 1, 0, 0, 7, 1, 6, 3],
+      ['CIV', 1, 1, 0, 0, 1, 0, 1, 3],
+      ['ECU', 1, 0, 0, 1, 0, 1, -1, 0],
+      ['CUW', 1, 0, 0, 1, 1, 7, -6, 0],
+    ],
+    fixtures: [
+      ['2026-06-14', '休士頓', 'GER', 'CUW', '完賽', 7, 1, [['GER', '時間待補', '凱・哈弗茨等'], ['CUW', '時間待補', '進球者待補']]],
+      ['2026-06-14', '費城', 'CIV', 'ECU', '完賽', 1, 0, [['CIV', '時間待補', '進球者待補']]],
+      ['2026-06-20 16:00', '堪薩斯城', 'GER', 'CIV'],
+      ['2026-06-20 20:00', '邁阿密', 'ECU', 'CUW'],
+      ['2026-06-25 16:00', '紐約/紐澤西', 'ECU', 'GER'],
+      ['2026-06-25 16:00', '休士頓', 'CUW', 'CIV'],
+    ],
   },
   {
-    id: 'esp-cpv',
-    group: 'Group G',
-    kickoff: '2026-06-15 12:00',
-    venue: 'Atlanta Stadium',
-    home: 'Spain',
-    away: 'Cabo Verde',
-    seedMarket: { home: 0.70, draw: 0.19, away: 0.11 },
-    homeRecord: { games: 5, goalsFor: 11, goalsAgainst: 3 },
-    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+    id: 'F',
+    name: 'F 組',
+    standings: [
+      ['SWE', 1, 1, 0, 0, 5, 1, 4, 3],
+      ['JPN', 1, 0, 1, 0, 2, 2, 0, 1],
+      ['NED', 1, 0, 1, 0, 2, 2, 0, 1],
+      ['TUN', 1, 0, 0, 1, 1, 5, -4, 0],
+    ],
+    fixtures: [
+      ['2026-06-14', '達拉斯', 'NED', 'JPN', '完賽', 2, 2, [['NED', '時間待補', '進球者待補'], ['JPN', '時間待補', '進球者待補']]],
+      ['2026-06-14', '西雅圖', 'SWE', 'TUN', '完賽', 5, 1, [['SWE', '時間待補', '亞辛・阿亞里等'], ['TUN', '時間待補', '進球者待補']]],
+      ['2026-06-20 13:00', '休士頓', 'NED', 'SWE'],
+      ['2026-06-20 24:00', '西雅圖', 'TUN', 'JPN'],
+      ['2026-06-25 19:00', '達拉斯', 'JPN', 'SWE'],
+      ['2026-06-25 19:00', '舊金山灣區', 'TUN', 'NED'],
+    ],
   },
   {
-    id: 'ksa-uru',
-    group: 'Group H',
-    kickoff: '2026-06-15 19:00',
-    venue: 'Miami Stadium',
-    home: 'Saudi Arabia',
-    away: 'Uruguay',
-    seedMarket: { home: 0.16, draw: 0.24, away: 0.60 },
-    homeRecord: { games: 5, goalsFor: 4, goalsAgainst: 7 },
-    awayRecord: { games: 5, goalsFor: 8, goalsAgainst: 4 },
+    id: 'G',
+    name: 'G 組',
+    standings: [
+      ['NZL', 1, 0, 1, 0, 2, 2, 0, 1],
+      ['IRN', 1, 0, 1, 0, 2, 2, 0, 1],
+      ['EGY', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['BEL', 1, 0, 1, 0, 1, 1, 0, 1],
+    ],
+    fixtures: [
+      ['2026-06-15', '紐約/紐澤西', 'BEL', 'EGY', '完賽', 1, 1, [['BEL', '時間待補', '進球者待補'], ['EGY', '時間待補', '進球者待補']]],
+      ['2026-06-15', '多倫多', 'IRN', 'NZL', '完賽', 2, 2, [['IRN', '時間待補', '進球者待補'], ['NZL', '時間待補', '進球者待補']]],
+      ['2026-06-21 15:00', '洛杉磯', 'BEL', 'IRN'],
+      ['2026-06-21 21:00', '多倫多', 'NZL', 'EGY'],
+      ['2026-06-26 23:00', '西雅圖', 'EGY', 'IRN'],
+      ['2026-06-26 23:00', '溫哥華', 'NZL', 'BEL'],
+    ],
   },
   {
-    id: 'por-cod',
-    group: 'Group K',
-    kickoff: '2026-06-17 12:00',
-    venue: 'Houston Stadium',
-    home: 'Portugal',
-    away: 'Congo DR',
-    seedMarket: { home: 0.68, draw: 0.20, away: 0.12 },
-    homeRecord: { games: 5, goalsFor: 12, goalsAgainst: 4 },
-    awayRecord: { games: 5, goalsFor: 6, goalsAgainst: 6 },
+    id: 'H',
+    name: 'H 組',
+    standings: [
+      ['KSA', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['URU', 1, 0, 1, 0, 1, 1, 0, 1],
+      ['ESP', 1, 0, 1, 0, 0, 0, 0, 1],
+      ['CPV', 1, 0, 1, 0, 0, 0, 0, 1],
+    ],
+    fixtures: [
+      ['2026-06-15', '亞特蘭大', 'ESP', 'CPV', '完賽', 0, 0, []],
+      ['2026-06-15', '邁阿密', 'KSA', 'URU', '完賽', 1, 1, [['KSA', '時間待補', '進球者待補'], ['URU', '時間待補', '進球者待補']]],
+      ['2026-06-21 12:00', '亞特蘭大', 'ESP', 'KSA'],
+      ['2026-06-21 18:00', '邁阿密', 'URU', 'CPV'],
+      ['2026-06-26 20:00', '休士頓', 'CPV', 'KSA'],
+      ['2026-06-26 20:00', '堪薩斯城', 'URU', 'ESP'],
+    ],
+  },
+  {
+    id: 'I',
+    name: 'I 組',
+    standings: [
+      ['NOR', 1, 1, 0, 0, 4, 1, 3, 3],
+      ['FRA', 1, 1, 0, 0, 3, 1, 2, 3],
+      ['SEN', 1, 0, 0, 1, 1, 3, -2, 0],
+      ['IRQ', 1, 0, 0, 1, 1, 4, -3, 0],
+    ],
+    fixtures: [
+      ['2026-06-16', '紐約/紐澤西', 'FRA', 'SEN', '完賽', 3, 1, [['FRA', '下半場', '基利安・姆巴佩'], ['FRA', '下半場', '布拉德利・巴爾科拉'], ['SEN', '時間待補', '進球者待補'], ['FRA', '補時', '基利安・姆巴佩']]],
+      ['2026-06-16', '波士頓', 'IRQ', 'NOR', '完賽', 1, 4, [['NOR', '29', '厄林・哈蘭德'], ['IRQ', '39', '艾曼・海珊'], ['NOR', '43', '厄林・哈蘭德'], ['NOR', '76', '萊奧・厄斯蒂高'], ['NOR', '90+6', '伊拉克烏龍球']]],
+      ['2026-06-22 17:00', '費城', 'FRA', 'IRQ'],
+      ['2026-06-22 20:00', '達拉斯', 'NOR', 'SEN'],
+      ['2026-06-26 15:00', '波士頓', 'NOR', 'FRA'],
+      ['2026-06-26 15:00', '多倫多', 'SEN', 'IRQ'],
+    ],
+  },
+  {
+    id: 'J',
+    name: 'J 組',
+    standings: [
+      ['ARG', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['AUT', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['ALG', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['JOR', 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    fixtures: [
+      ['2026-06-17 01:00', '堪薩斯城', 'ARG', 'ALG', '進行中'],
+      ['2026-06-17 04:00', '印第安納波利斯', 'AUT', 'JOR'],
+      ['2026-06-22 13:00', '達拉斯', 'ARG', 'AUT'],
+      ['2026-06-22 23:00', '堪薩斯城', 'JOR', 'ALG'],
+      ['2026-06-27 22:00', '印第安納波利斯', 'ALG', 'AUT'],
+      ['2026-06-27 22:00', '達拉斯', 'JOR', 'ARG'],
+    ],
+  },
+  {
+    id: 'K',
+    name: 'K 組',
+    standings: [
+      ['POR', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['COL', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['COD', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['UZB', 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    fixtures: [
+      ['2026-06-17 13:00', '休士頓', 'POR', 'COD'],
+      ['2026-06-17 22:00', '蒙特雷', 'UZB', 'COL'],
+      ['2026-06-23 13:00', '休士頓', 'POR', 'UZB'],
+      ['2026-06-23 22:00', '邁阿密', 'COL', 'COD'],
+      ['2026-06-27 19:30', '邁阿密', 'COL', 'POR'],
+      ['2026-06-27 19:30', '蒙特雷', 'COD', 'UZB'],
+    ],
+  },
+  {
+    id: 'L',
+    name: 'L 組',
+    standings: [
+      ['ENG', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['CRO', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['GHA', 0, 0, 0, 0, 0, 0, 0, 0],
+      ['PAN', 0, 0, 0, 0, 0, 0, 0, 0],
+    ],
+    fixtures: [
+      ['2026-06-17 16:00', '達拉斯', 'ENG', 'CRO'],
+      ['2026-06-17 19:00', '多倫多', 'GHA', 'PAN'],
+      ['2026-06-23 16:00', '紐約/紐澤西', 'ENG', 'GHA'],
+      ['2026-06-23 19:00', '多倫多', 'PAN', 'CRO'],
+      ['2026-06-27 17:00', '達拉斯', 'PAN', 'ENG'],
+      ['2026-06-27 17:00', '費城', 'CRO', 'GHA'],
+    ],
   },
 ];
 
-const state = {
-  backendAvailable: false,
-  fixtures: FIXTURES.map((fixture) => ({
-    ...fixture,
-    market: fixture.seedMarket,
-    marketSource: 'Seed market',
-    marketTitle: 'Seed market baseline',
-    marketLoading: true,
-  })),
-};
+const KNOCKOUT_TABS = [
+  { id: 'r32', label: '32 強', slots: 16 },
+  { id: 'r16', label: '16 強', slots: 8 },
+  { id: 'qf', label: '8 強', slots: 4 },
+  { id: 'sf', label: '4 強', slots: 2 },
+  { id: 'third', label: '季軍戰', slots: 1 },
+  { id: 'final', label: '決賽', slots: 1 },
+];
+
+const state = { activeTab: 'groups' };
+
+function team(code) {
+  return TEAM[code] || { name: code, flag: '🏳️' };
+}
+
+function teamLabel(code) {
+  const t = team(code);
+  return `<span class="flag" aria-hidden="true">${t.flag}</span><span>${t.name}</span>`;
+}
 
 function pct(value) {
   return `${(value * 100).toFixed(1)}%`;
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function clamp(value, min, max) {
@@ -129,256 +308,171 @@ function poissonProbability(k, lambda) {
   return Math.exp(-lambda) * Math.pow(lambda, k) / factorial(k);
 }
 
-function dixonColesAdjustment(homeGoals, awayGoals, lambdaHome, lambdaAway, rho = -0.08) {
-  if (homeGoals === 0 && awayGoals === 0) return Math.max(0.01, 1 - lambdaHome * lambdaAway * rho);
-  if (homeGoals === 0 && awayGoals === 1) return Math.max(0.01, 1 + lambdaHome * rho);
-  if (homeGoals === 1 && awayGoals === 0) return Math.max(0.01, 1 + lambdaAway * rho);
-  if (homeGoals === 1 && awayGoals === 1) return Math.max(0.01, 1 - rho);
-  return 1;
-}
-
-function normalizeMatrix(matrix) {
-  const total = matrix.flat().reduce((sum, cell) => sum + cell.probability, 0);
-  return matrix.map((row) => row.map((cell) => ({ ...cell, probability: cell.probability / total })));
-}
-
 function buildScoreMatrix(lambdaHome, lambdaAway, maxGoals = 7) {
-  const matrix = [];
+  const cells = [];
   for (let h = 0; h <= maxGoals; h += 1) {
-    const row = [];
     for (let a = 0; a <= maxGoals; a += 1) {
-      const base = poissonProbability(h, lambdaHome) * poissonProbability(a, lambdaAway);
-      row.push({ homeGoals: h, awayGoals: a, probability: base * dixonColesAdjustment(h, a, lambdaHome, lambdaAway) });
+      cells.push({ homeGoals: h, awayGoals: a, probability: poissonProbability(h, lambdaHome) * poissonProbability(a, lambdaAway) });
     }
-    matrix.push(row);
   }
-  return normalizeMatrix(matrix);
+  const total = cells.reduce((sum, cell) => sum + cell.probability, 0);
+  return cells.map((cell) => ({ ...cell, probability: cell.probability / total }));
 }
 
-function outcomeOf(homeGoals, awayGoals) {
-  if (homeGoals > awayGoals) return 'home';
-  if (homeGoals < awayGoals) return 'away';
-  return 'draw';
-}
-
-function outcomeTotals(matrix) {
-  const totals = { home: 0, draw: 0, away: 0 };
-  for (const row of matrix) {
-    for (const cell of row) totals[outcomeOf(cell.homeGoals, cell.awayGoals)] += cell.probability;
-  }
-  return totals;
-}
-
-function normalizeOutcomeProbabilities(probabilities) {
-  const home = Number(probabilities?.home) || 0;
-  const draw = Number(probabilities?.draw) || 0;
-  const away = Number(probabilities?.away) || 0;
-  const total = home + draw + away;
-  if (total <= 0) return { home: 1 / 3, draw: 1 / 3, away: 1 / 3 };
-  return { home: home / total, draw: draw / total, away: away / total };
-}
-
-function blendOutcomeProbabilities(modelTotals, marketProbabilities, marketWeight = 0.55) {
-  const model = normalizeOutcomeProbabilities(modelTotals);
-  const market = normalizeOutcomeProbabilities(marketProbabilities);
-  return normalizeOutcomeProbabilities({
-    home: model.home * (1 - marketWeight) + market.home * marketWeight,
-    draw: model.draw * (1 - marketWeight) + market.draw * marketWeight,
-    away: model.away * (1 - marketWeight) + market.away * marketWeight,
-  });
-}
-
-function reweightMatrixToOutcomeTargets(matrix, targets) {
-  const current = outcomeTotals(matrix);
-  const factors = {
-    home: current.home > 0 ? targets.home / current.home : 0,
-    draw: current.draw > 0 ? targets.draw / current.draw : 0,
-    away: current.away > 0 ? targets.away / current.away : 0,
-  };
-  return normalizeMatrix(matrix.map((row) => row.map((cell) => ({
-    ...cell,
-    probability: cell.probability * factors[outcomeOf(cell.homeGoals, cell.awayGoals)],
-  }))));
-}
-
-function topScores(matrix, limit = 3) {
-  return matrix.flat().sort((a, b) => b.probability - a.probability).slice(0, limit);
-}
-
-function deriveLambdas(homeRecord, awayRecord) {
-  const mu = 1.35;
-  const homeAdvantage = 1.06;
-  const hGames = Math.max(1, homeRecord.games);
-  const aGames = Math.max(1, awayRecord.games);
-  const homeAttack = clamp((homeRecord.goalsFor / hGames) / mu, 0.35, 2.8);
-  const homeDefenseWeakness = clamp((homeRecord.goalsAgainst / hGames) / mu, 0.35, 2.8);
-  const awayAttack = clamp((awayRecord.goalsFor / aGames) / mu, 0.35, 2.8);
-  const awayDefenseWeakness = clamp((awayRecord.goalsAgainst / aGames) / mu, 0.35, 2.8);
-
+function teamStrength(code) {
+  const all = GROUPS.flatMap((group) => group.standings);
+  const row = all.find(([teamCode]) => teamCode === code);
+  if (!row) return { gf: 1.2, ga: 1.2 };
+  const [, played, wins, draws, losses, gf, ga] = row;
+  if (!played) return { gf: 1.25, ga: 1.25 };
   return {
-    lambdaHome: clamp(mu * homeAdvantage * homeAttack * awayDefenseWeakness, 0.15, 4.5),
-    lambdaAway: clamp(mu * awayAttack * homeDefenseWeakness, 0.15, 4.5),
+    gf: clamp(gf / played + wins * 0.15 + draws * 0.05, 0.6, 2.8),
+    ga: clamp(ga / played + losses * 0.12, 0.5, 2.8),
   };
 }
 
-function predictFixture(fixture) {
-  const { lambdaHome, lambdaAway } = deriveLambdas(fixture.homeRecord, fixture.awayRecord);
-  const rawMatrix = buildScoreMatrix(lambdaHome, lambdaAway);
-  const modelTotals = outcomeTotals(rawMatrix);
-  const targets = blendOutcomeProbabilities(modelTotals, fixture.market);
-  const calibratedMatrix = reweightMatrixToOutcomeTargets(rawMatrix, targets);
-  const scores = topScores(calibratedMatrix);
-  return { scores, totals: outcomeTotals(calibratedMatrix), lambdaHome, lambdaAway };
+function predictMatch(homeCode, awayCode) {
+  const home = teamStrength(homeCode);
+  const away = teamStrength(awayCode);
+  const lambdaHome = clamp(1.18 * home.gf * away.ga, 0.25, 4.2);
+  const lambdaAway = clamp(1.08 * away.gf * home.ga, 0.25, 4.2);
+  return buildScoreMatrix(lambdaHome, lambdaAway)
+    .sort((a, b) => b.probability - a.probability)
+    .slice(0, 3);
 }
 
-function sourceClass(source) {
-  if (source === 'Polymarket') return 'source-polymarket';
-  if (source === 'Kalshi') return 'source-kalshi';
-  return 'source-seed';
+function renderTabs() {
+  const tabs = [{ id: 'groups', label: '第一輪' }, ...KNOCKOUT_TABS];
+  $('tabs').innerHTML = tabs.map((tab) => `
+    <button class="tab ${state.activeTab === tab.id ? 'active' : ''} ${tab.id === 'groups' ? '' : 'muted-tab'}" data-tab="${tab.id}">
+      ${tab.label}
+    </button>
+  `).join('');
+}
+
+function renderStandingTable(group) {
+  return `
+    <table class="standings-table">
+      <thead><tr><th>隊伍</th><th>賽</th><th>勝</th><th>平</th><th>負</th><th>進</th><th>失</th><th>淨</th><th>積分</th></tr></thead>
+      <tbody>
+        ${group.standings.map(([code, played, wins, draws, losses, gf, ga, gd, points]) => `
+          <tr>
+            <td class="team-cell">${teamLabel(code)}</td>
+            <td>${played}</td><td>${wins}</td><td>${draws}</td><td>${losses}</td><td>${gf}</td><td>${ga}</td><td>${gd > 0 ? `+${gd}` : gd}</td><td><strong>${points}</strong></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function normalizeFixture(item, group) {
+  const [date, venue, home, away, status = '未賽', homeScore = null, awayScore = null, events = []] = item;
+  return { id: `${group.id}-${home}-${away}`.toLowerCase(), group: group.name, date, venue, home, away, status, homeScore, awayScore, events };
+}
+
+function renderSummary(fixture) {
+  if (fixture.status !== '完賽') return '';
+  const rows = fixture.events.length
+    ? fixture.events.map(([code, minute, scorer]) => `<li><strong>${minute}'</strong> ${teamLabel(code)} ${scorer}</li>`).join('')
+    : '<li>本場 0-0，沒有進球。</li>';
+  return `
+    <a class="summary-link" href="#${fixture.id}">比賽摘要</a>
+    <div class="match-detail" id="${fixture.id}">
+      <h4>${team(fixture.home).name} ${fixture.homeScore}-${fixture.awayScore} ${team(fixture.away).name}</h4>
+      <ul>${rows}</ul>
+    </div>
+  `;
+}
+
+function renderPrediction(fixture) {
+  if (fixture.status === '完賽') return `<div class="scoreline">${fixture.homeScore}-${fixture.awayScore}</div><p class="small-text">已完賽</p>`;
+  if (fixture.status === '進行中') return '<div class="scoreline live-text">進行中</div><p class="small-text">等待完賽後更新摘要</p>';
+  const scores = predictMatch(fixture.home, fixture.away);
+  return `
+    <div class="prediction-list">
+      ${scores.map((score) => `<span>${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
+    </div>
+    <p class="small-text">模型預測｜資料來源：種子市場</p>
+  `;
 }
 
 function renderFixtureCard(fixture) {
-  const prediction = predictFixture(fixture);
-  const best = prediction.scores[0];
-  const market = normalizeOutcomeProbabilities(fixture.market);
-  const sourceLabel = fixture.marketLoading ? 'Checking markets...' : fixture.marketSource;
-  const topScores = prediction.scores.map((score) => `
-    <span>${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>
-  `).join('');
-
   return `
     <article class="fixture-card">
       <div class="fixture-card__top">
         <div>
-          <p class="eyebrow">${fixture.group}</p>
-          <h2>${escapeHtml(fixture.home)} <span>vs</span> ${escapeHtml(fixture.away)}</h2>
-          <p class="muted">${escapeHtml(fixture.kickoff)} · ${escapeHtml(fixture.venue)}</p>
+          <p class="eyebrow">${fixture.group}｜${fixture.date}</p>
+          <h3><span class="team-name">${teamLabel(fixture.home)}</span><em>對</em><span class="team-name">${teamLabel(fixture.away)}</span></h3>
+          <p class="muted">${fixture.venue}</p>
         </div>
-        <span class="source-pill ${sourceClass(fixture.marketSource)}">${escapeHtml(sourceLabel)}</span>
+        <span class="source-pill">${fixture.status}</span>
       </div>
-
-      <div class="prediction-row">
-        <div>
-          <p class="label">最可能比分</p>
-          <strong class="best-score">${best.homeGoals}-${best.awayGoals}</strong>
-          <small>${pct(best.probability)}</small>
-        </div>
-        <div class="market-grid">
-          <span><b>${pct(market.home)}</b><small>${escapeHtml(fixture.home)} 勝</small></span>
-          <span><b>${pct(market.draw)}</b><small>和局</small></span>
-          <span><b>${pct(market.away)}</b><small>${escapeHtml(fixture.away)} 勝</small></span>
-        </div>
-      </div>
-
-      <div class="top-scores">${topScores}</div>
-      <p class="market-title">${escapeHtml(fixture.marketTitle)}</p>
+      ${renderPrediction(fixture)}
+      ${renderSummary(fixture)}
     </article>
   `;
 }
 
-function renderFixtures() {
-  $('fixtures').innerHTML = state.fixtures.map(renderFixtureCard).join('');
-  const counts = state.fixtures.reduce((acc, fixture) => {
-    acc[fixture.marketSource] = (acc[fixture.marketSource] || 0) + 1;
-    return acc;
-  }, {});
-  $('marketSummary').textContent = `Polymarket ${counts.Polymarket || 0} · Kalshi ${counts.Kalshi || 0} · Seed market ${counts['Seed market'] || 0}`;
+function renderGroups() {
+  $('content').innerHTML = GROUPS.map((group) => {
+    const fixtures = group.fixtures.map((item) => normalizeFixture(item, group));
+    return `
+      <section class="group-section">
+        <div class="group-header">
+          <h2>${group.name}</h2>
+          <p>四隊積分與完整小組賽賽程</p>
+        </div>
+        ${renderStandingTable(group)}
+        <div class="fixtures">${fixtures.map(renderFixtureCard).join('')}</div>
+      </section>
+    `;
+  }).join('');
 }
 
-function hasCompleteMarket(probabilities) {
-  return probabilities
-    && Number.isFinite(probabilities.home)
-    && Number.isFinite(probabilities.draw)
-    && Number.isFinite(probabilities.away)
-    && probabilities.home > 0
-    && probabilities.draw > 0
-    && probabilities.away > 0;
+function renderEmptyKnockout(tabId) {
+  const tab = KNOCKOUT_TABS.find((item) => item.id === tabId);
+  const rows = Array.from({ length: tab.slots }, (_, index) => `
+    <tr><td>第 ${index + 1} 場</td><td class="empty-slot">待第一輪晉級隊伍產生</td><td class="empty-slot">待排定</td><td class="empty-slot">待更新</td></tr>
+  `).join('');
+  $('content').innerHTML = `
+    <section class="group-section inactive-stage">
+      <div class="group-header">
+        <h2>${tab.label}</h2>
+        <p>尚未開賽。第一輪晉級名單確認後，這裡會立即寫入下一輪表格。</p>
+      </div>
+      <table class="standings-table">
+        <thead><tr><th>場次</th><th>對戰</th><th>時間</th><th>摘要</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+  `;
 }
 
-async function refreshFixtureMarket(fixture) {
-  if (!state.backendAvailable) {
-    fixture.market = fixture.seedMarket;
-    fixture.marketSource = 'Seed market';
-    fixture.marketTitle = '公開展示模式：使用 Seed market baseline';
-    fixture.marketLoading = false;
-    renderFixtures();
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/fixture-market?home=${encodeURIComponent(fixture.home)}&away=${encodeURIComponent(fixture.away)}`);
-    const payload = await response.json();
-    const probabilities = payload?.market?.probabilities;
-    if (payload.source === 'Polymarket' && hasCompleteMarket(probabilities)) {
-      fixture.market = probabilities;
-      fixture.marketSource = 'Polymarket';
-      fixture.marketTitle = payload.market.title || 'Polymarket match winner';
-    } else if (payload.source === 'Kalshi' && hasCompleteMarket(probabilities)) {
-      fixture.market = probabilities;
-      fixture.marketSource = 'Kalshi';
-      fixture.marketTitle = payload.market.title || 'Kalshi market';
-    } else {
-      fixture.market = fixture.seedMarket;
-      fixture.marketSource = 'Seed market';
-      fixture.marketTitle = 'Seed market baseline';
-    }
-  } catch (error) {
-    fixture.market = fixture.seedMarket;
-    fixture.marketSource = 'Seed market';
-    fixture.marketTitle = `Seed market baseline (${error.message})`;
-  } finally {
-    fixture.marketLoading = false;
-    renderFixtures();
-  }
+function renderSourceNote() {
+  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；I 組完賽比分與摘要依 Guardian、FOX Sports、AP 相關報導人工校對。';
 }
 
-async function refreshAllMarkets() {
-  $('refreshMarkets').disabled = true;
-  state.fixtures = state.fixtures.map((fixture) => ({
-    ...fixture,
-    market: fixture.seedMarket,
-    marketSource: 'Seed market',
-    marketTitle: 'Seed market baseline',
-    marketLoading: true,
-  }));
-  renderFixtures();
-  if (!state.backendAvailable) {
-    state.fixtures.forEach((fixture) => {
-      fixture.marketLoading = false;
-      fixture.marketTitle = '公開展示模式：使用 Seed market baseline';
-    });
-    renderFixtures();
-    $('refreshMarkets').disabled = false;
-    return;
-  }
-
-  await Promise.all(state.fixtures.map(refreshFixtureMarket));
-  $('refreshMarkets').disabled = false;
+function render() {
+  renderTabs();
+  renderSourceNote();
+  if (state.activeTab === 'groups') renderGroups();
+  else renderEmptyKnockout(state.activeTab);
 }
 
-async function checkHealth() {
-  try {
-    const response = await fetch('/api/health');
-    const payload = await response.json();
-    if (!payload.ok) throw new Error('health not ok');
-    $('health').className = 'status status-ok';
-    $('health').textContent = payload.kalshiEnabled ? '後端已連線｜Kalshi 已啟用' : '後端已連線｜Kalshi 未啟用';
-    state.backendAvailable = true;
-    return true;
-  } catch (_error) {
-    $('health').className = 'status status-ok';
-    $('health').textContent = '公開展示模式｜Seed market';
-    state.backendAvailable = false;
-    return false;
-  }
-}
+$('tabs').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-tab]');
+  if (!button) return;
+  state.activeTab = button.dataset.tab;
+  render();
+});
 
-$('refreshMarkets').addEventListener('click', refreshAllMarkets);
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('.summary-link');
+  if (!link) return;
+  event.preventDefault();
+  const detail = document.querySelector(link.getAttribute('href'));
+  if (detail) detail.classList.toggle('open');
+});
 
-async function init() {
-  renderFixtures();
-  await checkHealth();
-  await refreshAllMarkets();
-}
-
-init();
+render();
