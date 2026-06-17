@@ -224,7 +224,7 @@ const GROUPS = [
       ['JOR', 0, 0, 0, 0, 0, 0, 0, 0],
     ],
     fixtures: [
-      ['2026-06-17 01:00', '堪薩斯城', 'ARG', 'ALG', '進行中'],
+      ['2026-06-17 01:00', '堪薩斯城', 'ARG', 'ALG', '進行中', 2, 0, [['ARG', '17', '里奧・梅西'], ['ARG', '63', '里奧・梅西']], { minute: '63', updatedAt: '2026-06-17 10:39', source: 'ABC Score Centre / NBC Sports / Guardian', note: '梅西第 17 分鐘遠射破門；下半場再把握門將失誤補進第二球。阿爾及利亞曾有進球因越位被取消。' }],
       ['2026-06-17 04:00', '印第安納波利斯', 'AUT', 'JOR'],
       ['2026-06-22 13:00', '達拉斯', 'ARG', 'AUT'],
       ['2026-06-22 23:00', '堪薩斯城', 'JOR', 'ALG'],
@@ -457,27 +457,54 @@ function renderStandingTable(group) {
 }
 
 function normalizeFixture(item, group) {
-  const [date, venue, home, away, status = '未賽', homeScore = null, awayScore = null, events = []] = item;
-  return { id: `${group.id}-${home}-${away}`.toLowerCase(), group: group.name, date, venue, home, away, status, homeScore, awayScore, events };
+  const [date, venue, home, away, status = '未賽', homeScore = null, awayScore = null, events = [], meta = {}] = item;
+  return { id: `${group.id}-${home}-${away}`.toLowerCase(), group: group.name, date, venue, home, away, status, homeScore, awayScore, events, meta };
+}
+
+function isLiveFixture(fixture) {
+  return fixture.status === '進行中';
+}
+
+function hasScore(fixture) {
+  return Number.isFinite(fixture.homeScore) && Number.isFinite(fixture.awayScore);
+}
+
+function allFixtures() {
+  return GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)));
 }
 
 function renderSummary(fixture) {
-  if (fixture.status !== '完賽') return '';
+  if (fixture.status !== '完賽' && !isLiveFixture(fixture)) return '';
   const rows = fixture.events.length
     ? fixture.events.map(([code, minute, scorer]) => `<li><strong>${minute}'</strong> ${teamLabel(code)} ${scorer}</li>`).join('')
-    : '<li>本場 0-0，沒有進球。</li>';
+    : `<li>${fixture.status === '完賽' ? '本場 0-0，沒有進球。' : '目前尚未有進球事件。'}</li>`;
+  const liveNote = isLiveFixture(fixture) && fixture.meta.note
+    ? `<p class="live-note">${fixture.meta.note}</p>`
+    : '';
+  const source = isLiveFixture(fixture) && fixture.meta.source
+    ? `<p class="small-text">即時來源：${fixture.meta.source}｜更新：${fixture.meta.updatedAt}</p>`
+    : '';
+  const title = hasScore(fixture)
+    ? `${team(fixture.home).name} ${fixture.homeScore}-${fixture.awayScore} ${team(fixture.away).name}`
+    : `${team(fixture.home).name} 對 ${team(fixture.away).name}`;
   return `
-    <a class="summary-link" href="#${fixture.id}">比賽摘要</a>
-    <div class="match-detail" id="${fixture.id}">
-      <h4>${team(fixture.home).name} ${fixture.homeScore}-${fixture.awayScore} ${team(fixture.away).name}</h4>
+    <a class="summary-link" href="#${fixture.id}">${isLiveFixture(fixture) ? '即時比賽摘要' : '比賽摘要'}</a>
+    <div class="match-detail ${isLiveFixture(fixture) ? 'open live-detail' : ''}" id="${fixture.id}">
+      <h4>${title}</h4>
+      ${liveNote}
       <ul>${rows}</ul>
+      ${source}
     </div>
   `;
 }
 
 function renderPrediction(fixture) {
   if (fixture.status === '完賽') return `<div class="scoreline">${fixture.homeScore}-${fixture.awayScore}</div><p class="small-text">已完賽</p>`;
-  if (fixture.status === '進行中') return '<div class="scoreline live-text">進行中</div><p class="small-text">等待完賽後更新摘要</p>';
+  if (isLiveFixture(fixture)) {
+    const score = hasScore(fixture) ? `${fixture.homeScore}-${fixture.awayScore}` : '進行中';
+    const minute = fixture.meta.minute ? `目前 ${fixture.meta.minute}'` : '即時更新中';
+    return `<div class="scoreline live-text">${score}</div><p class="small-text">${minute}｜比賽摘要會隨最新資料更新</p>`;
+  }
   const prediction = predictMatch(fixture.home, fixture.away);
   const best = prediction.scores[0];
   return `
@@ -503,7 +530,7 @@ function renderPrediction(fixture) {
 
 function renderFixtureCard(fixture) {
   return `
-    <article class="fixture-card">
+    <article class="fixture-card ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
       <div class="fixture-card__top">
         <div>
           <p class="eyebrow">${fixture.group}｜${fixture.date}</p>
@@ -519,8 +546,9 @@ function renderFixtureCard(fixture) {
 }
 
 function renderGroups() {
-  $('content').innerHTML = `${renderRegressionPanel()}${GROUPS.map((group) => {
-    const fixtures = group.fixtures.map((item) => normalizeFixture(item, group));
+  const liveFixtures = allFixtures().filter(isLiveFixture);
+  $('content').innerHTML = `${renderLiveFixtures(liveFixtures)}${renderRegressionPanel()}${GROUPS.map((group) => {
+    const fixtures = group.fixtures.map((item) => normalizeFixture(item, group)).filter((fixture) => !isLiveFixture(fixture));
     return `
       <section class="group-section">
         <div class="group-header">
@@ -532,6 +560,22 @@ function renderGroups() {
       </section>
     `;
   }).join('')}`;
+}
+
+function renderLiveFixtures(fixtures) {
+  if (!fixtures.length) return '';
+  return `
+    <section class="live-section">
+      <div class="group-header">
+        <div>
+          <p class="eyebrow">即時戰況</p>
+          <h2>進行中的比賽</h2>
+        </div>
+        <p>最新比分、進球時間與場上摘要</p>
+      </div>
+      <div class="fixtures fixtures--live">${fixtures.map(renderFixtureCard).join('')}</div>
+    </section>
+  `;
 }
 
 function renderRegressionPanel() {
@@ -577,7 +621,7 @@ function renderEmptyKnockout(tabId) {
 }
 
 function renderSourceNote() {
-  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；I 組完賽比分與摘要依 Guardian、FOX Sports、AP 相關報導人工校對。每新增一場完賽資料，頁面載入時會重新回歸校正未賽預測。';
+  $('sourceNote').textContent = '資料更新：2026-06-17。賽程與 A-H/J-L 組積分依 CBS Sports；完賽與進行中摘要依 Guardian、FOX Sports、NBC Sports、ABC Score Centre、AP 相關報導人工校對。每新增一場完賽資料，頁面載入時會重新回歸校正未賽預測。';
 }
 
 function render() {

@@ -116,6 +116,15 @@ button.tab {
   margin-bottom: 16px;
 }
 
+.live-section {
+  background: #fffaf0;
+  border: 1px solid #f0d2a3;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
 .regression-panel {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr);
@@ -244,6 +253,16 @@ td {
   background: #ffffff;
 }
 
+.fixture-card--live {
+  border-color: #df9d47;
+  background: #fffdf8;
+  box-shadow: inset 4px 0 0 var(--amber);
+}
+
+.fixtures--live {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
 .fixture-card__top {
   display: flex;
   justify-content: space-between;
@@ -295,7 +314,7 @@ td {
 
 .live-text {
   color: var(--amber);
-  font-size: 28px;
+  font-size: 42px;
 }
 
 .small-text {
@@ -395,8 +414,19 @@ td {
   display: block;
 }
 
+.match-detail.live-detail {
+  background: #fff4e5;
+  border-color: #f0d2a3;
+}
+
 .match-detail h4 {
   margin-bottom: 8px;
+}
+
+.live-note {
+  color: #704006;
+  line-height: 1.55;
+  margin-bottom: 10px;
 }
 
 .match-detail ul {
