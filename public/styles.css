@@ -393,6 +393,64 @@ td {
   color: var(--accent);
 }
 
+.taiwan-odds {
+  border: 1px solid #d8e0c5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfdf5;
+  margin-top: 12px;
+}
+
+.taiwan-odds__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.taiwan-odds__header strong {
+  color: #40570f;
+}
+
+.taiwan-odds__header span,
+.taiwan-odds__header a {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.taiwan-odds__market + .taiwan-odds__market {
+  margin-top: 10px;
+}
+
+.odds-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.odds-choice-grid span {
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  align-content: center;
+  border: 1px solid #d8e0c5;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.odds-choice-grid small {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.odds-choice-grid b {
+  color: #40570f;
+  font-size: 22px;
+}
+
 .summary-link {
   display: inline-flex;
   color: var(--accent);
@@ -475,5 +533,9 @@ footer {
   .standings-table {
     display: block;
     overflow-x: auto;
+  }
+
+  .odds-choice-grid {
+    grid-template-columns: 1fr;
   }
 }

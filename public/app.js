@@ -63,6 +63,57 @@ const PLAYER_NAME_ZH = {
   'Luis Díaz': '路易斯・迪亞斯',
 };
 
+const TAIWAN_TEAM_ALIASES = {
+  MEX: ['墨西哥'],
+  RSA: ['南非'],
+  KOR: ['韓國', '南韓'],
+  CZE: ['捷克'],
+  CAN: ['加拿大'],
+  BIH: ['波士尼亞與赫塞哥維納', '波赫'],
+  QAT: ['卡達'],
+  SUI: ['瑞士'],
+  BRA: ['巴西'],
+  MAR: ['摩洛哥'],
+  SCO: ['蘇格蘭'],
+  HAI: ['海地'],
+  USA: ['美國'],
+  PAR: ['巴拉圭'],
+  AUS: ['澳洲'],
+  TUR: ['土耳其'],
+  GER: ['德國'],
+  CUW: ['庫拉索', '古拉索'],
+  CIV: ['象牙海岸'],
+  ECU: ['厄瓜多'],
+  NED: ['荷蘭'],
+  JPN: ['日本'],
+  SWE: ['瑞典'],
+  TUN: ['突尼西亞'],
+  BEL: ['比利時'],
+  EGY: ['埃及'],
+  IRN: ['伊朗'],
+  NZL: ['紐西蘭'],
+  ESP: ['西班牙'],
+  CPV: ['維德角'],
+  KSA: ['沙烏地阿拉伯'],
+  URU: ['烏拉圭'],
+  FRA: ['法國'],
+  SEN: ['塞內加爾'],
+  IRQ: ['伊拉克'],
+  NOR: ['挪威'],
+  ARG: ['阿根廷'],
+  ALG: ['阿爾及利亞'],
+  AUT: ['奧地利'],
+  JOR: ['約旦'],
+  POR: ['葡萄牙'],
+  COD: ['剛果民主共和國', '民主剛果'],
+  UZB: ['烏茲別克'],
+  COL: ['哥倫比亞'],
+  ENG: ['英格蘭'],
+  CRO: ['克羅埃西亞'],
+  GHA: ['迦納'],
+  PAN: ['巴拿馬'],
+};
+
 const GROUPS = [
   {
     id: 'A',
@@ -293,9 +344,13 @@ const KNOCKOUT_TABS = [
 
 const LIVE_REFRESH_MS = 30000;
 const ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+const TAIWAN_LOTTERY_WC_URL = 'data/taiwan-odds.json';
 const state = {
   activeTab: 'groups',
   liveOverrides: new Map(),
+  taiwanOdds: new Map(),
+  taiwanOddsUpdatedAt: null,
+  taiwanOddsError: null,
   lastLiveUpdate: null,
   liveError: null,
 };
@@ -311,6 +366,10 @@ function teamLabel(code) {
 
 function playerLabel(name) {
   return PLAYER_NAME_ZH[name] || name || '進球者待確認';
+}
+
+function normalizeTaiwanName(value) {
+  return String(value || '').replace(/\s+/g, '').trim();
 }
 
 function pct(value) {
@@ -503,6 +562,72 @@ function currentFixturesForGroup(group) {
 
 function fixtureKey(home, away) {
   return [home, away].sort().join('-');
+}
+
+function taiwanNameMatches(code, name) {
+  const normalized = normalizeTaiwanName(name);
+  return (TAIWAN_TEAM_ALIASES[code] || [team(code).name]).some((alias) => normalizeTaiwanName(alias) === normalized);
+}
+
+function taiwanFixtureKey(homeName, awayName) {
+  const home = Object.keys(TEAM).find((code) => taiwanNameMatches(code, homeName));
+  const away = Object.keys(TEAM).find((code) => taiwanNameMatches(code, awayName));
+  if (!home || !away) return null;
+  return fixtureKey(home, away);
+}
+
+function decimalOdds(choice) {
+  const numerator = Number(choice?.pu);
+  const denominator = Number(choice?.pd);
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null;
+  return 1 + numerator / denominator;
+}
+
+function parseTaiwanChoices(market) {
+  return (market?.cs || []).map((choice) => ({
+    name: choice.name,
+    shortName: choice.sn || choice.name,
+    side: choice.v,
+    handicap: choice.hv ?? null,
+    odds: decimalOdds(choice),
+  })).filter((choice) => Number.isFinite(choice.odds));
+}
+
+function parseTaiwanOddsGame(game) {
+  const moneyline = game.ms?.find((market) => market.name === '不讓分');
+  const handicap = game.ms?.find((market) => market.name.startsWith('讓分'));
+  return {
+    gameNo: game.no,
+    title: game.bn,
+    kickoff: game.kt,
+    source: '台灣運彩',
+    moneyline: moneyline ? { name: moneyline.name, choices: parseTaiwanChoices(moneyline) } : null,
+    handicap: handicap ? { name: handicap.name, line: handicap.mv, choices: parseTaiwanChoices(handicap) } : null,
+  };
+}
+
+async function refreshTaiwanOdds() {
+  try {
+    const payload = await fetchEspnJson(TAIWAN_LOTTERY_WC_URL);
+    const games = Array.isArray(payload) ? payload : payload.games;
+    const next = new Map();
+    for (const game of Array.isArray(games) ? games : []) {
+      const key = taiwanFixtureKey(game.hn, game.an);
+      if (key) next.set(key, parseTaiwanOddsGame(game));
+    }
+    state.taiwanOdds = next;
+    state.taiwanOddsUpdatedAt = payload.updatedAt ? new Date(payload.updatedAt) : new Date();
+    state.taiwanOddsError = null;
+    render();
+  } catch (error) {
+    state.taiwanOddsError = error.message;
+    renderSourceNote();
+  }
+}
+
+function startTaiwanOddsPolling() {
+  refreshTaiwanOdds();
+  window.setInterval(refreshTaiwanOdds, 5 * 60 * 1000);
 }
 
 function formatEspnDate(date) {
@@ -728,6 +853,57 @@ function renderPrediction(fixture) {
       ${prediction.scores.map((score, index) => `<span class="${index === 0 ? 'best-pick' : ''}">${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
     </div>
     <p class="small-text">模型預測｜校正後 λ：${prediction.lambdaHome.toFixed(2)} / ${prediction.lambdaAway.toFixed(2)}｜原始 λ：${prediction.rawLambdaHome.toFixed(2)} / ${prediction.rawLambdaAway.toFixed(2)}</p>
+    ${renderTaiwanOdds(fixture)}
+  `;
+}
+
+function renderOddsChoices(market) {
+  if (!market?.choices?.length) return '<p class="small-text">目前未開</p>';
+  return `
+    <div class="odds-choice-grid">
+      ${market.choices.map((choice) => `
+        <span>
+          <small>${choice.name}</small>
+          <b>${choice.odds.toFixed(2)}</b>
+        </span>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderTaiwanOdds(fixture) {
+  const odds = state.taiwanOdds.get(fixtureKey(fixture.home, fixture.away));
+  const updated = state.taiwanOddsUpdatedAt
+    ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+    : '讀取中';
+  if (!odds) {
+    const message = state.taiwanOddsError ? `讀取失敗：${state.taiwanOddsError}` : '待台灣運彩開盤或資料同步';
+    return `
+      <div class="taiwan-odds">
+        <div class="taiwan-odds__header">
+          <strong>台灣運彩</strong>
+          <a href="https://www.sportslottery.com.tw/" target="_blank" rel="noreferrer">官網</a>
+        </div>
+        <p class="small-text">${message}</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="taiwan-odds">
+      <div class="taiwan-odds__header">
+        <strong>台灣運彩</strong>
+        <span>場次 ${odds.gameNo}｜${updated}</span>
+      </div>
+      <div class="taiwan-odds__market">
+        <p class="label">不讓分賠率</p>
+        ${renderOddsChoices(odds.moneyline)}
+      </div>
+      <div class="taiwan-odds__market">
+        <p class="label">${odds.handicap?.name || '讓分賠率'}</p>
+        ${renderOddsChoices(odds.handicap)}
+      </div>
+    </div>
   `;
 }
 
@@ -828,8 +1004,12 @@ function renderSourceNote() {
   const liveStatus = state.lastLiveUpdate
     ? `即時比分最近同步：${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}。`
     : '即時比分同步中。';
+  const oddsStatus = state.taiwanOddsUpdatedAt
+    ? `台灣運彩賠率最近同步：${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}。`
+    : '台灣運彩賠率同步中。';
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
-  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${error}`;
+  const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
+  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩賠率每 5 分鐘同步官方世界盃賽事檔。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${error}${oddsError}`;
 }
 
 function render() {
@@ -856,3 +1036,4 @@ document.addEventListener('click', (event) => {
 
 render();
 startLivePolling();
+startTaiwanOddsPolling();
