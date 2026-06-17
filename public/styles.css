@@ -421,8 +421,9 @@ td {
 .fan-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: contain;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top center;
   background:
     linear-gradient(135deg, rgba(15, 23, 42, .08), rgba(23, 104, 91, .08)),
     #eef2f7;
@@ -434,7 +435,7 @@ td {
   align-content: center;
   gap: 6px;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 5;
   padding: 14px;
   color: var(--muted);
   background:
