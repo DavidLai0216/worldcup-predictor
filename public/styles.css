@@ -422,8 +422,10 @@ td {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 10;
-  object-fit: cover;
-  background: #e5eaf2;
+  object-fit: contain;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, .08), rgba(23, 104, 91, .08)),
+    #eef2f7;
 }
 
 .fan-card__missing {
