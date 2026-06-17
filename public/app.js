@@ -1009,7 +1009,7 @@ function renderSourceNote() {
     : '台灣運彩賠率同步中。';
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
-  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩賠率每 5 分鐘同步官方世界盃賽事檔。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${error}${oddsError}`;
+  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${error}${oddsError}`;
 }
 
 function render() {

@@ -15,7 +15,15 @@ async function main() {
       'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
     },
   });
-  if (!response.ok) throw new Error(`Taiwan Sports Lottery HTTP ${response.status}`);
+  if (!response.ok) {
+    try {
+      await fs.access(OUTPUT_PATH);
+      console.warn(`Taiwan Sports Lottery HTTP ${response.status}; keeping existing odds snapshot.`);
+      return;
+    } catch (_error) {
+      throw new Error(`Taiwan Sports Lottery HTTP ${response.status}`);
+    }
+  }
   const games = await response.json();
   if (!Array.isArray(games)) throw new Error('Taiwan Sports Lottery payload is not an array');
 
