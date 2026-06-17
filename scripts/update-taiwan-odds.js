@@ -7,7 +7,14 @@ const SOURCE_URL = 'https://blob3rd.sportslottery.com.tw/apidata/Pre/WC-Games.zh
 const OUTPUT_PATH = path.join(__dirname, '..', 'public', 'data', 'taiwan-odds.json');
 
 async function main() {
-  const response = await fetch(SOURCE_URL, { headers: { 'User-Agent': 'worldcup-predictor/0.1' } });
+  const response = await fetch(SOURCE_URL, {
+    headers: {
+      Accept: 'application/json,text/plain,*/*',
+      Origin: 'https://www.sportslottery.com.tw',
+      Referer: 'https://www.sportslottery.com.tw/',
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
+    },
+  });
   if (!response.ok) throw new Error(`Taiwan Sports Lottery HTTP ${response.status}`);
   const games = await response.json();
   if (!Array.isArray(games)) throw new Error('Taiwan Sports Lottery payload is not an array');
