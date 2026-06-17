@@ -569,9 +569,13 @@ function taiwanNameMatches(code, name) {
   return (TAIWAN_TEAM_ALIASES[code] || [team(code).name]).some((alias) => normalizeTaiwanName(alias) === normalized);
 }
 
+function codeForTaiwanName(name) {
+  return Object.keys(TEAM).find((code) => taiwanNameMatches(code, name)) || null;
+}
+
 function taiwanFixtureKey(homeName, awayName) {
-  const home = Object.keys(TEAM).find((code) => taiwanNameMatches(code, homeName));
-  const away = Object.keys(TEAM).find((code) => taiwanNameMatches(code, awayName));
+  const home = codeForTaiwanName(homeName);
+  const away = codeForTaiwanName(awayName);
   if (!home || !away) return null;
   return fixtureKey(home, away);
 }
@@ -583,26 +587,31 @@ function decimalOdds(choice) {
   return 1 + numerator / denominator;
 }
 
-function parseTaiwanChoices(market) {
+function parseTaiwanChoices(market, officialHome, officialAway) {
   return (market?.cs || []).map((choice) => ({
     name: choice.name,
     shortName: choice.sn || choice.name,
     side: choice.v,
+    teamCode: choice.v === 'H' ? officialHome : choice.v === 'A' ? officialAway : null,
     handicap: choice.hv ?? null,
     odds: decimalOdds(choice),
   })).filter((choice) => Number.isFinite(choice.odds));
 }
 
 function parseTaiwanOddsGame(game) {
+  const officialHome = codeForTaiwanName(game.hn);
+  const officialAway = codeForTaiwanName(game.an);
   const moneyline = game.ms?.find((market) => market.name === '不讓分');
   const handicap = game.ms?.find((market) => market.name.startsWith('讓分'));
   return {
     gameNo: game.no,
     title: game.bn,
     kickoff: game.kt,
+    officialHome,
+    officialAway,
     source: '台灣運彩',
-    moneyline: moneyline ? { name: moneyline.name, choices: parseTaiwanChoices(moneyline) } : null,
-    handicap: handicap ? { name: handicap.name, line: handicap.mv, choices: parseTaiwanChoices(handicap) } : null,
+    moneyline: moneyline ? { name: moneyline.name, choices: parseTaiwanChoices(moneyline, officialHome, officialAway) } : null,
+    handicap: handicap ? { name: handicap.name, line: handicap.mv, choices: parseTaiwanChoices(handicap, officialHome, officialAway) } : null,
   };
 }
 
@@ -857,11 +866,21 @@ function renderPrediction(fixture) {
   `;
 }
 
-function renderOddsChoices(market) {
+function orderedTaiwanChoices(market, fixture) {
+  if (!market?.choices?.length) return [];
+  const homeChoice = market.choices.find((choice) => choice.teamCode === fixture.home);
+  const drawChoice = market.choices.find((choice) => choice.side === 'D');
+  const awayChoice = market.choices.find((choice) => choice.teamCode === fixture.away);
+  return [homeChoice, drawChoice, awayChoice].filter(Boolean);
+}
+
+function renderOddsChoices(market, fixture) {
+  const choices = orderedTaiwanChoices(market, fixture);
   if (!market?.choices?.length) return '<p class="small-text">目前未開</p>';
+  if (!choices.length) return '<p class="small-text">盤口隊伍無法對應此場 fixture</p>';
   return `
     <div class="odds-choice-grid">
-      ${market.choices.map((choice) => `
+      ${choices.map((choice) => `
         <span>
           <small>${choice.name}</small>
           <b>${choice.odds.toFixed(2)}</b>
@@ -895,13 +914,14 @@ function renderTaiwanOdds(fixture) {
         <strong>台灣運彩</strong>
         <span>場次 ${odds.gameNo}｜${updated}</span>
       </div>
+      <p class="small-text">官方場次：${odds.title}；下方已依本卡片隊伍順序排列。</p>
       <div class="taiwan-odds__market">
         <p class="label">不讓分賠率</p>
-        ${renderOddsChoices(odds.moneyline)}
+        ${renderOddsChoices(odds.moneyline, fixture)}
       </div>
       <div class="taiwan-odds__market">
         <p class="label">${odds.handicap?.name || '讓分賠率'}</p>
-        ${renderOddsChoices(odds.handicap)}
+        ${renderOddsChoices(odds.handicap, fixture)}
       </div>
     </div>
   `;
