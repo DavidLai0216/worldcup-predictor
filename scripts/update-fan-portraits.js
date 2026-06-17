@@ -19,6 +19,49 @@ const CURATED_COMMONS_FILES = {
   USA: { title: 'File:Fans painted with Equal Pay and rainbow flags (48675274007).jpg', sport: 'football' },
 };
 
+const PLAYER_FALLBACKS = {
+  AUS: 'Mathew Ryan',
+  BEL: 'Kevin De Bruyne',
+  BIH: 'Edin Džeko',
+  BRA: 'Vinícius Júnior',
+  CAN: 'Alphonso Davies',
+  CIV: 'Franck Kessié',
+  COD: 'Chancel Mbemba',
+  COL: 'Luis Díaz (footballer, born 1997)',
+  CPV: 'Ryan Mendes',
+  CRO: 'Luka Modrić',
+  CUW: 'Leandro Bacuna',
+  CZE: 'Patrik Schick',
+  ECU: 'Moisés Caicedo',
+  EGY: 'Mohamed Salah',
+  ENG: 'Jude Bellingham',
+  ESP: 'Lamine Yamal',
+  FRA: 'Kylian Mbappé',
+  GHA: 'Mohammed Kudus',
+  HAI: 'Duckens Nazon',
+  IRQ: 'Aymen Hussein',
+  JOR: 'Mousa Al-Tamari',
+  KOR: 'Son Heung-min',
+  KSA: 'Salem Al-Dawsari',
+  MAR: 'Achraf Hakimi',
+  MEX: 'Santiago Giménez',
+  ARG: 'Lionel Messi',
+  NOR: 'Erling Haaland',
+  NZL: 'Chris Wood (footballer, born 1991)',
+  PAN: 'Adalberto Carrasquilla',
+  PAR: 'Miguel Almirón',
+  POR: 'Cristiano Ronaldo',
+  QAT: 'Akram Afif',
+  SCO: 'Scott McTominay',
+  SEN: 'Sadio Mané',
+  SUI: 'Granit Xhaka',
+  SWE: 'Alexander Isak',
+  TUN: 'Hannibal Mejbri',
+  TUR: 'Hakan Çalhanoğlu',
+  URU: 'Federico Valverde',
+  UZB: 'Eldor Shomurodov',
+};
+
 function isImageUrl(url) {
   return /\.(jpe?g|png|webp)(\?|$)/i.test(url || '');
 }
@@ -104,15 +147,37 @@ async function getCommonsFile(title) {
   return commonsResult(page);
 }
 
+async function getPlayerFallback(code) {
+  const playerName = PLAYER_FALLBACKS[code];
+  if (!playerName) return null;
+  const url = new URL(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(playerName.replaceAll(' ', '_'))}`);
+  const response = await fetch(url, { headers: { 'User-Agent': 'worldcup-predictor/0.1' } });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  const imageUrl = payload.originalimage?.source || payload.thumbnail?.source;
+  if (!isImageUrl(imageUrl)) return null;
+  return {
+    kind: 'player',
+    source: 'Wikimedia projects',
+    sourceUrl: payload.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(playerName.replaceAll(' ', '_'))}`,
+    imageUrl,
+    playerName: payload.title || playerName,
+    description: payload.description || payload.extract || `${playerName} footballer`,
+    license: null,
+    sport: 'football',
+  };
+}
+
 async function main() {
   const data = JSON.parse(await fs.readFile(DATA_PATH, 'utf8'));
   let updated = 0;
 
   for (const [code, entry] of Object.entries(data.teams || {})) {
     const curated = CURATED_COMMONS_FILES[code];
-    const result = curated
+    let result = curated
       ? await getCommonsFile(curated.title)
-      : await findCommonsImage(searchQueries(entry));
+      : null;
+    if (!result) result = await getPlayerFallback(code);
     if (!result) continue;
     data.teams[code] = {
       ...entry,
@@ -120,7 +185,7 @@ async function main() {
       sport: curated?.sport || result.sport,
     };
     updated += 1;
-    await sleep(250);
+    await sleep(800);
   }
 
   if (updated > 0) {

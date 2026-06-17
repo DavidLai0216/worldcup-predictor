@@ -1048,13 +1048,16 @@ function renderTaiwanOdds(fixture) {
 function fanPortrait(code, fixture) {
   const entry = state.fanPortraits[code] || {};
   const imageUrl = fixture.status === '完賽' && entry.completedImageUrl ? entry.completedImageUrl : entry.imageUrl;
-  const isReal = entry.kind === 'real' && Boolean(imageUrl);
-  const source = isReal ? `${entry.source}${entry.sport === 'football' ? '｜足球球迷' : '｜運動球迷'}` : '真實授權照片待補';
+  const isDisplayable = ['real', 'player'].includes(entry.kind) && Boolean(imageUrl);
+  const source = entry.kind === 'player'
+    ? `${entry.source}｜明星球員：${entry.playerName || team(code).name}`
+    : `${entry.source}${entry.sport === 'football' ? '｜足球球迷' : '｜運動球迷'}`;
   return {
-    imageUrl: isReal ? imageUrl : null,
-    isReal,
-    source,
-    sourceUrl: isReal ? entry.sourceUrl || null : null,
+    imageUrl: isDisplayable ? imageUrl : null,
+    isDisplayable,
+    source: isDisplayable ? source : '真實授權照片待補',
+    sourceUrl: isDisplayable ? entry.sourceUrl || null : null,
+    kind: entry.kind || 'pending',
     searchQuery: entry.searchQuery || `${team(code).name} adult woman football fan portrait`,
   };
 }
@@ -1065,14 +1068,17 @@ function renderFanPortrait(code, fixture) {
   const source = portrait.sourceUrl
     ? `<a href="${portrait.sourceUrl}" target="_blank" rel="noreferrer">${escapeHtml(portrait.source)}</a>`
     : escapeHtml(portrait.source);
+  const altText = portrait.kind === 'player'
+    ? `${t.name}2026世足明星球員肖像`
+    : `${t.name}成年女性球迷真實照片`;
   const media = portrait.imageUrl
-    ? `<img src="${escapeHtml(portrait.imageUrl)}" alt="${escapeHtml(t.name)}成年女性球迷真實照片" loading="lazy" />`
+    ? `<img src="${escapeHtml(portrait.imageUrl)}" alt="${escapeHtml(altText)}" loading="lazy" />`
     : `<div class="fan-card__missing" role="img" aria-label="${escapeHtml(t.name)}真實授權球迷照片待補">
         <strong>${t.flag}</strong>
         <span>待補真實照片</span>
       </div>`;
   return `
-    <figure class="fan-card ${portrait.isReal ? 'fan-card--real' : 'fan-card--missing'}">
+    <figure class="fan-card ${portrait.isDisplayable ? 'fan-card--real' : 'fan-card--missing'} ${portrait.kind === 'player' ? 'fan-card--player' : ''}">
       ${media}
       <figcaption>
         <strong>${teamLabel(code)}</strong>
@@ -1212,7 +1218,7 @@ function renderSourceNote() {
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
   const fanError = state.fanPortraitsError ? ` 球迷肖像同步暫時失敗：${state.fanPortraitsError}。` : '';
-  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。球迷肖像優先使用足球球迷真實照片，沒有足球來源時可使用該國其他運動的成年女性球迷或觀眾真實照片；尚未確認時標示待補。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
+  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。影像優先使用足球球迷真實照片，沒有足球來源時可使用該國其他運動的成年女性球迷或觀眾真實照片；仍找不到時改用該國2026世足明星球員肖像，且卡片會清楚標示類型。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
 }
 
 function render() {
