@@ -92,6 +92,7 @@ const FIXTURES = [
 ];
 
 const state = {
+  backendAvailable: false,
   fixtures: FIXTURES.map((fixture) => ({
     ...fixture,
     market: fixture.seedMarket,
@@ -295,6 +296,15 @@ function hasCompleteMarket(probabilities) {
 }
 
 async function refreshFixtureMarket(fixture) {
+  if (!state.backendAvailable) {
+    fixture.market = fixture.seedMarket;
+    fixture.marketSource = 'Seed market';
+    fixture.marketTitle = '公開展示模式：使用 Seed market baseline';
+    fixture.marketLoading = false;
+    renderFixtures();
+    return;
+  }
+
   try {
     const response = await fetch(`/api/fixture-market?home=${encodeURIComponent(fixture.home)}&away=${encodeURIComponent(fixture.away)}`);
     const payload = await response.json();
@@ -332,6 +342,16 @@ async function refreshAllMarkets() {
     marketLoading: true,
   }));
   renderFixtures();
+  if (!state.backendAvailable) {
+    state.fixtures.forEach((fixture) => {
+      fixture.marketLoading = false;
+      fixture.marketTitle = '公開展示模式：使用 Seed market baseline';
+    });
+    renderFixtures();
+    $('refreshMarkets').disabled = false;
+    return;
+  }
+
   await Promise.all(state.fixtures.map(refreshFixtureMarket));
   $('refreshMarkets').disabled = false;
 }
@@ -343,14 +363,22 @@ async function checkHealth() {
     if (!payload.ok) throw new Error('health not ok');
     $('health').className = 'status status-ok';
     $('health').textContent = payload.kalshiEnabled ? '後端已連線｜Kalshi 已啟用' : '後端已連線｜Kalshi 未啟用';
+    state.backendAvailable = true;
+    return true;
   } catch (_error) {
-    $('health').className = 'status status-bad';
-    $('health').textContent = '後端未連線';
+    $('health').className = 'status status-ok';
+    $('health').textContent = '公開展示模式｜Seed market';
+    state.backendAvailable = false;
+    return false;
   }
 }
 
 $('refreshMarkets').addEventListener('click', refreshAllMarkets);
 
-checkHealth();
-renderFixtures();
-refreshAllMarkets();
+async function init() {
+  renderFixtures();
+  await checkHealth();
+  await refreshAllMarkets();
+}
+
+init();
