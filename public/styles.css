@@ -426,6 +426,35 @@ td {
   background: #e5eaf2;
 }
 
+.fan-card__missing {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 14px;
+  color: var(--muted);
+  background:
+    linear-gradient(135deg, rgba(23, 104, 91, .08), rgba(176, 53, 53, .07)),
+    #f8fafc;
+}
+
+.fan-card__missing strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.fan-card__missing span {
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.fan-card--missing {
+  border-style: dashed;
+}
+
 .fan-card figcaption {
   display: grid;
   gap: 4px;
