@@ -305,6 +305,49 @@ td {
   border: 1px solid #f0d2a3;
 }
 
+.fan-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fan-card {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.fan-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #e5eaf2;
+}
+
+.fan-card figcaption {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+}
+
+.fan-card figcaption strong {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.fan-card figcaption span,
+.fan-card figcaption a {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .scoreline {
   font-size: 42px;
   line-height: 1;
@@ -533,6 +576,10 @@ footer {
   .standings-table {
     display: block;
     overflow-x: auto;
+  }
+
+  .fan-strip {
+    grid-template-columns: 1fr;
   }
 
   .odds-choice-grid {

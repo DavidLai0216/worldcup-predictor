@@ -1,0 +1,438 @@
+{
+  "updatedAt": "2026-06-17T06:50:11.016Z",
+  "policy": "成人女性球迷肖像優先；若尚未找到可穩定授權或可熱連結的現場照片，使用成人女性球迷風格保底圖，避免未成年或版權不明照片。",
+  "teams": {
+    "MEX": {
+      "team": "墨西哥",
+      "searchQuery": "Mexico adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "RSA": {
+      "team": "南非",
+      "searchQuery": "South Africa adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "KOR": {
+      "team": "韓國",
+      "searchQuery": "South Korea adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CZE": {
+      "team": "捷克",
+      "searchQuery": "Czechia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CAN": {
+      "team": "加拿大",
+      "searchQuery": "Canada adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "BIH": {
+      "team": "波士尼亞與赫塞哥維納",
+      "searchQuery": "Bosnia and Herzegovina adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "QAT": {
+      "team": "卡達",
+      "searchQuery": "Qatar adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "SUI": {
+      "team": "瑞士",
+      "searchQuery": "Switzerland adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "BRA": {
+      "team": "巴西",
+      "searchQuery": "Brazil adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "MAR": {
+      "team": "摩洛哥",
+      "searchQuery": "Morocco adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "SCO": {
+      "team": "蘇格蘭",
+      "searchQuery": "Scotland adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "HAI": {
+      "team": "海地",
+      "searchQuery": "Haiti adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "USA": {
+      "team": "美國",
+      "searchQuery": "United States adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "PAR": {
+      "team": "巴拉圭",
+      "searchQuery": "Paraguay adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "AUS": {
+      "team": "澳洲",
+      "searchQuery": "Australia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "TUR": {
+      "team": "土耳其",
+      "searchQuery": "Turkey adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "GER": {
+      "team": "德國",
+      "searchQuery": "Germany adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CUW": {
+      "team": "庫拉索",
+      "searchQuery": "Curacao adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CIV": {
+      "team": "象牙海岸",
+      "searchQuery": "Ivory Coast adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "ECU": {
+      "team": "厄瓜多",
+      "searchQuery": "Ecuador adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "NED": {
+      "team": "荷蘭",
+      "searchQuery": "Netherlands adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "JPN": {
+      "team": "日本",
+      "searchQuery": "Japan adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "SWE": {
+      "team": "瑞典",
+      "searchQuery": "Sweden adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "TUN": {
+      "team": "突尼西亞",
+      "searchQuery": "Tunisia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "BEL": {
+      "team": "比利時",
+      "searchQuery": "Belgium adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "EGY": {
+      "team": "埃及",
+      "searchQuery": "Egypt adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "IRN": {
+      "team": "伊朗",
+      "searchQuery": "Iran adult woman football fan portrait World Cup supporter",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Iranian_female_football_fan.jpg",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Iranian_female_football_fan.jpg",
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "NZL": {
+      "team": "紐西蘭",
+      "searchQuery": "New Zealand adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "ESP": {
+      "team": "西班牙",
+      "searchQuery": "Spain adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CPV": {
+      "team": "維德角",
+      "searchQuery": "Cape Verde adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "KSA": {
+      "team": "沙烏地阿拉伯",
+      "searchQuery": "Saudi Arabia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "URU": {
+      "team": "烏拉圭",
+      "searchQuery": "Uruguay adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "FRA": {
+      "team": "法國",
+      "searchQuery": "France adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "SEN": {
+      "team": "塞內加爾",
+      "searchQuery": "Senegal adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "IRQ": {
+      "team": "伊拉克",
+      "searchQuery": "Iraq adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "NOR": {
+      "team": "挪威",
+      "searchQuery": "Norway adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "ARG": {
+      "team": "阿根廷",
+      "searchQuery": "Argentina adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "ALG": {
+      "team": "阿爾及利亞",
+      "searchQuery": "Algeria adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "AUT": {
+      "team": "奧地利",
+      "searchQuery": "Austria adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "JOR": {
+      "team": "約旦",
+      "searchQuery": "Jordan adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "POR": {
+      "team": "葡萄牙",
+      "searchQuery": "Portugal adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "COD": {
+      "team": "剛果民主共和國",
+      "searchQuery": "DR Congo adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "UZB": {
+      "team": "烏茲別克",
+      "searchQuery": "Uzbekistan adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "COL": {
+      "team": "哥倫比亞",
+      "searchQuery": "Colombia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "ENG": {
+      "team": "英格蘭",
+      "searchQuery": "England adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "CRO": {
+      "team": "克羅埃西亞",
+      "searchQuery": "Croatia adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "GHA": {
+      "team": "迦納",
+      "searchQuery": "Ghana adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    },
+    "PAN": {
+      "team": "巴拿馬",
+      "searchQuery": "Panama adult woman football fan portrait World Cup supporter",
+      "source": "Fallback portrait",
+      "sourceUrl": null,
+      "imageUrl": null,
+      "completedImageUrl": null,
+      "updatedAfter": null
+    }
+  }
+}

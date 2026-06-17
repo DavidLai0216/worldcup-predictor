@@ -345,12 +345,16 @@ const KNOCKOUT_TABS = [
 const LIVE_REFRESH_MS = 30000;
 const ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 const TAIWAN_LOTTERY_WC_URL = 'data/taiwan-odds.json';
+const FAN_PORTRAITS_URL = 'data/fan-portraits.json';
 const state = {
   activeTab: 'groups',
   liveOverrides: new Map(),
   taiwanOdds: new Map(),
   taiwanOddsUpdatedAt: null,
   taiwanOddsError: null,
+  fanPortraits: {},
+  fanPortraitsUpdatedAt: null,
+  fanPortraitsError: null,
   lastLiveUpdate: null,
   liveError: null,
 };
@@ -370,6 +374,16 @@ function playerLabel(name) {
 
 function normalizeTaiwanName(value) {
   return String(value || '').replace(/\s+/g, '').trim();
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
 }
 
 function pct(value) {
@@ -637,6 +651,60 @@ async function refreshTaiwanOdds() {
 function startTaiwanOddsPolling() {
   refreshTaiwanOdds();
   window.setInterval(refreshTaiwanOdds, 5 * 60 * 1000);
+}
+
+function colorFromCode(code, offset = 0) {
+  let hash = offset;
+  for (const char of code) hash = (hash * 31 + char.charCodeAt(0)) % 360;
+  return `hsl(${hash}, 58%, 42%)`;
+}
+
+function fallbackFanPortrait(code, fixture) {
+  const t = team(code);
+  const statusLabel = fixture.status === '完賽' ? '完賽後更新' : fixture.status === '進行中' ? '現場追蹤' : '賽前球迷';
+  const primary = colorFromCode(code, 17);
+  const secondary = colorFromCode(code, 191);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
+      <defs>
+        <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="${primary}"/>
+          <stop offset="1" stop-color="${secondary}"/>
+        </linearGradient>
+      </defs>
+      <rect width="640" height="420" fill="url(#bg)"/>
+      <circle cx="520" cy="78" r="94" fill="rgba(255,255,255,.18)"/>
+      <circle cx="126" cy="352" r="132" fill="rgba(255,255,255,.13)"/>
+      <path d="M0 300 C120 250 220 330 330 278 C450 220 520 265 640 218 L640 420 L0 420 Z" fill="rgba(0,0,0,.2)"/>
+      <circle cx="320" cy="156" r="66" fill="#f3c29b"/>
+      <path d="M246 153 C248 83 297 54 345 72 C404 94 412 168 385 212 C358 168 313 172 246 153 Z" fill="#2d2430"/>
+      <path d="M211 340 C224 254 260 214 320 214 C380 214 416 254 429 340 Z" fill="rgba(255,255,255,.92)"/>
+      <path d="M248 340 C260 278 282 246 320 246 C358 246 380 278 392 340 Z" fill="${primary}"/>
+      <rect x="222" y="332" width="196" height="26" rx="13" fill="rgba(255,255,255,.85)"/>
+      <text x="320" y="64" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="white">${t.flag}</text>
+      <text x="320" y="386" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="white">${escapeHtml(t.name)}</text>
+      <text x="320" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="rgba(255,255,255,.78)">${statusLabel}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+async function refreshFanPortraits() {
+  try {
+    const payload = await fetchEspnJson(FAN_PORTRAITS_URL);
+    state.fanPortraits = payload.teams || {};
+    state.fanPortraitsUpdatedAt = payload.updatedAt ? new Date(payload.updatedAt) : new Date();
+    state.fanPortraitsError = null;
+    render();
+  } catch (error) {
+    state.fanPortraitsError = error.message;
+    renderSourceNote();
+  }
+}
+
+function startFanPortraitsPolling() {
+  refreshFanPortraits();
+  window.setInterval(refreshFanPortraits, 30 * 60 * 1000);
 }
 
 function formatEspnDate(date) {
@@ -927,6 +995,44 @@ function renderTaiwanOdds(fixture) {
   `;
 }
 
+function fanPortrait(code, fixture) {
+  const entry = state.fanPortraits[code] || {};
+  const imageUrl = fixture.status === '完賽' && entry.completedImageUrl ? entry.completedImageUrl : entry.imageUrl;
+  const source = entry.source || '保底肖像';
+  return {
+    imageUrl: imageUrl || fallbackFanPortrait(code, fixture),
+    source,
+    sourceUrl: entry.sourceUrl || null,
+    searchQuery: entry.searchQuery || `${team(code).name} adult woman football fan portrait`,
+  };
+}
+
+function renderFanPortrait(code, fixture) {
+  const portrait = fanPortrait(code, fixture);
+  const t = team(code);
+  const source = portrait.sourceUrl
+    ? `<a href="${portrait.sourceUrl}" target="_blank" rel="noreferrer">${escapeHtml(portrait.source)}</a>`
+    : escapeHtml(portrait.source);
+  return `
+    <figure class="fan-card">
+      <img src="${escapeHtml(portrait.imageUrl)}" alt="${escapeHtml(t.name)}成年女性球迷肖像" loading="lazy" />
+      <figcaption>
+        <strong>${teamLabel(code)}</strong>
+        <span>${source}</span>
+      </figcaption>
+    </figure>
+  `;
+}
+
+function renderFanPortraits(fixture) {
+  return `
+    <div class="fan-strip" aria-label="雙方球迷肖像">
+      ${renderFanPortrait(fixture.home, fixture)}
+      ${renderFanPortrait(fixture.away, fixture)}
+    </div>
+  `;
+}
+
 function renderFixtureCard(fixture) {
   return `
     <article class="fixture-card ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
@@ -938,6 +1044,7 @@ function renderFixtureCard(fixture) {
         </div>
         <span class="source-pill">${fixture.status}</span>
       </div>
+      ${renderFanPortraits(fixture)}
       ${renderPrediction(fixture)}
       ${renderSummary(fixture)}
     </article>
@@ -1027,9 +1134,13 @@ function renderSourceNote() {
   const oddsStatus = state.taiwanOddsUpdatedAt
     ? `台灣運彩賠率最近同步：${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}。`
     : '台灣運彩賠率同步中。';
+  const fanStatus = state.fanPortraitsUpdatedAt
+    ? `球迷肖像最近同步：${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}。`
+    : '球迷肖像同步中。';
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
-  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${error}${oddsError}`;
+  const fanError = state.fanPortraitsError ? ` 球迷肖像同步暫時失敗：${state.fanPortraitsError}。` : '';
+  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。球迷肖像以成人女性球迷為優先，找不到穩定公開來源時使用保底肖像。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
 }
 
 function render() {
@@ -1057,3 +1168,4 @@ document.addEventListener('click', (event) => {
 render();
 startLivePolling();
 startTaiwanOddsPolling();
+startFanPortraitsPolling();
