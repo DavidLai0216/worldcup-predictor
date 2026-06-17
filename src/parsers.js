@@ -46,36 +46,83 @@ function normalizeProbabilities(probabilities) {
   return { home: home / total, draw: draw / total, away: away / total };
 }
 
+function marketLooksLikeThreeWayResult(market, homeTeam, awayTeam) {
+  const title = market.question || market.title || market.slug || market.conditionId || '';
+  const text = normalizeText(`${title} ${market.description || ''}`);
+  if (!includesTeamName(text, homeTeam) || !includesTeamName(text, awayTeam)) return false;
+
+  const positivePatterns = [
+    /\bmatch winner\b/,
+    /\bmatch result\b/,
+    /\b90 minutes?\b/,
+    /\b90 min\b/,
+    /\bfull time\b/,
+    /\bregulation\b/,
+    /\b3 way\b/,
+    /\bthree way\b/,
+    /\bwho will win\b/,
+    /\bto win\b/,
+    /\bresult\b/,
+    /\bwinner\b/,
+  ];
+  const negativePatterns = [
+    /\badvance\b/,
+    /\bqualify\b/,
+    /\bto qualify\b/,
+    /\bwin group\b/,
+    /\bgroup winner\b/,
+    /\bchampion\b/,
+    /\bwin the world cup\b/,
+    /\btournament\b/,
+    /\bpenalt/,
+    /\bovertime\b/,
+    /\bextra time\b/,
+    /\bexact score\b/,
+    /\bcorrect score\b/,
+    /\btotal goals\b/,
+    /\bover under\b/,
+    /\bclean sheet\b/,
+  ];
+
+  return positivePatterns.some((pattern) => pattern.test(text))
+    && !negativePatterns.some((pattern) => pattern.test(text));
+}
+
+function classifyThreeWayOutcome(label, homeTeam, awayTeam) {
+  if (/\b(draw|tie|x)\b/i.test(label)) return 'draw';
+  if (includesTeamName(label, homeTeam)) return 'home';
+  if (includesTeamName(label, awayTeam)) return 'away';
+  return null;
+}
+
 function parsePolymarketMarket(market, homeTeam, awayTeam) {
   const outcomes = parseMaybeJsonArray(market.outcomes || market.outcomeNames);
   const prices = parseMaybeJsonArray(market.outcomePrices || market.prices).map(Number);
   if (!outcomes.length || outcomes.length !== prices.length) return null;
+  if (outcomes.length !== 3) return null;
+  if (!marketLooksLikeThreeWayResult(market, homeTeam, awayTeam)) return null;
 
   const probabilities = { home: 0, draw: 0, away: 0 };
   const matchedOutcomes = [];
+  const matchedSides = new Set();
 
   outcomes.forEach((outcome, index) => {
     const label = String(outcome || '');
     const price = Number(prices[index]);
     if (!Number.isFinite(price) || price <= 0) return;
 
-    if (/\b(draw|tie)\b/i.test(label)) {
-      probabilities.draw += price;
-      matchedOutcomes.push({ side: 'draw', label, price });
-    } else if (includesTeamName(label, homeTeam)) {
-      probabilities.home += price;
-      matchedOutcomes.push({ side: 'home', label, price });
-    } else if (includesTeamName(label, awayTeam)) {
-      probabilities.away += price;
-      matchedOutcomes.push({ side: 'away', label, price });
-    }
+    const side = classifyThreeWayOutcome(label, homeTeam, awayTeam);
+    if (!side || matchedSides.has(side)) return;
+    probabilities[side] += price;
+    matchedSides.add(side);
+    matchedOutcomes.push({ side, label, price });
   });
+
+  if (!matchedSides.has('home') || !matchedSides.has('draw') || !matchedSides.has('away')) return null;
 
   const normalized = normalizeProbabilities(probabilities);
   if (!normalized) return null;
 
-  const hasBothTeams = matchedOutcomes.some((m) => m.side === 'home') && matchedOutcomes.some((m) => m.side === 'away');
-  const hasDraw = matchedOutcomes.some((m) => m.side === 'draw');
   const title = market.question || market.title || market.slug || market.conditionId || 'Untitled market';
   const marketText = normalizeText(`${title} ${market.description || ''}`);
   const textScore = (includesTeamName(marketText, homeTeam) ? 1 : 0) + (includesTeamName(marketText, awayTeam) ? 1 : 0);
@@ -87,7 +134,7 @@ function parsePolymarketMarket(market, homeTeam, awayTeam) {
     probabilities: normalized,
     rawProbabilities: probabilities,
     matchedOutcomes,
-    confidence: (hasBothTeams ? 0.5 : 0.2) + (hasDraw ? 0.2 : 0) + textScore * 0.15,
+    confidence: 0.8 + textScore * 0.1,
     source: 'polymarket',
   };
 }
@@ -156,6 +203,7 @@ module.exports = {
   tokenize,
   includesTeamName,
   normalizeProbabilities,
+  marketLooksLikeThreeWayResult,
   parsePolymarketMarket,
   parsePolymarketMarkets,
   scoreEventForTeam,

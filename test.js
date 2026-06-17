@@ -15,6 +15,7 @@ const {
   parsePolymarketMarkets,
   deriveRecordFromEvents,
   normalizeProbabilities,
+  marketLooksLikeThreeWayResult,
 } = require('./src/parsers');
 const { buildKalshiSignaturePayload, signKalshiRequest } = require('./src/kalshi');
 
@@ -46,7 +47,7 @@ test('parseMaybeJsonArray accepts JSON and comma lists', () => {
 
 test('parsePolymarketMarkets reads team/draw outcome prices', () => {
   const markets = [{
-    question: 'France vs Argentina winner',
+    question: 'France vs Argentina match winner',
     outcomes: '["France","Draw","Argentina"]',
     outcomePrices: '["0.40","0.25","0.35"]',
     slug: 'france-argentina-winner',
@@ -56,6 +57,37 @@ test('parsePolymarketMarkets reads team/draw outcome prices', () => {
   approx(parsed[0].probabilities.home, 0.40);
   approx(parsed[0].probabilities.draw, 0.25);
   approx(parsed[0].probabilities.away, 0.35);
+});
+
+test('parsePolymarketMarkets reads 90 minutes result markets', () => {
+  const markets = [{
+    question: 'Brazil vs Morocco 90 minutes result',
+    outcomes: '["Brazil","Draw","Morocco"]',
+    outcomePrices: '["0.58","0.24","0.18"]',
+    slug: 'brazil-morocco-90-minutes-result',
+  }];
+  const parsed = parsePolymarketMarkets(markets, 'Brazil', 'Morocco');
+  assert.equal(parsed.length, 1);
+  approx(parsed[0].probabilities.home, 0.58);
+  approx(parsed[0].probabilities.draw, 0.24);
+  approx(parsed[0].probabilities.away, 0.18);
+});
+
+test('parsePolymarketMarkets rejects qualify and yes-no markets', () => {
+  const markets = [
+    {
+      question: 'Will France qualify over Argentina?',
+      outcomes: '["Yes","No"]',
+      outcomePrices: '["0.52","0.48"]',
+    },
+    {
+      question: 'France vs Argentina to qualify',
+      outcomes: '["France","Argentina","Draw"]',
+      outcomePrices: '["0.45","0.55","0.01"]',
+    },
+  ];
+  assert.equal(marketLooksLikeThreeWayResult(markets[1], 'France', 'Argentina'), false);
+  assert.equal(parsePolymarketMarkets(markets, 'France', 'Argentina').length, 0);
 });
 
 test('normalizeProbabilities rescales overround-like input', () => {

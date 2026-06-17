@@ -1,16 +1,117 @@
 const $ = (id) => document.getElementById(id);
 
+const FIXTURES = [
+  {
+    id: 'mex-rsa',
+    group: 'Group A',
+    kickoff: '2026-06-11 19:00',
+    venue: 'Mexico City Stadium',
+    home: 'Mexico',
+    away: 'South Africa',
+    seedMarket: { home: 0.55, draw: 0.27, away: 0.18 },
+    homeRecord: { games: 5, goalsFor: 9, goalsAgainst: 4 },
+    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+  },
+  {
+    id: 'kor-cze',
+    group: 'Group A',
+    kickoff: '2026-06-11 22:00',
+    venue: 'Guadalajara Stadium',
+    home: 'Korea Republic',
+    away: 'Czechia',
+    seedMarket: { home: 0.34, draw: 0.29, away: 0.37 },
+    homeRecord: { games: 5, goalsFor: 8, goalsAgainst: 5 },
+    awayRecord: { games: 5, goalsFor: 7, goalsAgainst: 5 },
+  },
+  {
+    id: 'can-bih',
+    group: 'Group B',
+    kickoff: '2026-06-12 19:00',
+    venue: 'Toronto Stadium',
+    home: 'Canada',
+    away: 'Bosnia and Herzegovina',
+    seedMarket: { home: 0.42, draw: 0.28, away: 0.30 },
+    homeRecord: { games: 5, goalsFor: 8, goalsAgainst: 6 },
+    awayRecord: { games: 5, goalsFor: 7, goalsAgainst: 6 },
+  },
+  {
+    id: 'usa-par',
+    group: 'Group D',
+    kickoff: '2026-06-12 22:00',
+    venue: 'Los Angeles Stadium',
+    home: 'United States',
+    away: 'Paraguay',
+    seedMarket: { home: 0.50, draw: 0.27, away: 0.23 },
+    homeRecord: { games: 5, goalsFor: 10, goalsAgainst: 5 },
+    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+  },
+  {
+    id: 'ger-cur',
+    group: 'Group E',
+    kickoff: '2026-06-14 12:00',
+    venue: 'Houston Stadium',
+    home: 'Germany',
+    away: 'Curacao',
+    seedMarket: { home: 0.74, draw: 0.17, away: 0.09 },
+    homeRecord: { games: 5, goalsFor: 12, goalsAgainst: 5 },
+    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 9 },
+  },
+  {
+    id: 'esp-cpv',
+    group: 'Group G',
+    kickoff: '2026-06-15 12:00',
+    venue: 'Atlanta Stadium',
+    home: 'Spain',
+    away: 'Cabo Verde',
+    seedMarket: { home: 0.70, draw: 0.19, away: 0.11 },
+    homeRecord: { games: 5, goalsFor: 11, goalsAgainst: 3 },
+    awayRecord: { games: 5, goalsFor: 5, goalsAgainst: 6 },
+  },
+  {
+    id: 'ksa-uru',
+    group: 'Group H',
+    kickoff: '2026-06-15 19:00',
+    venue: 'Miami Stadium',
+    home: 'Saudi Arabia',
+    away: 'Uruguay',
+    seedMarket: { home: 0.16, draw: 0.24, away: 0.60 },
+    homeRecord: { games: 5, goalsFor: 4, goalsAgainst: 7 },
+    awayRecord: { games: 5, goalsFor: 8, goalsAgainst: 4 },
+  },
+  {
+    id: 'por-cod',
+    group: 'Group K',
+    kickoff: '2026-06-17 12:00',
+    venue: 'Houston Stadium',
+    home: 'Portugal',
+    away: 'Congo DR',
+    seedMarket: { home: 0.68, draw: 0.20, away: 0.12 },
+    homeRecord: { games: 5, goalsFor: 12, goalsAgainst: 4 },
+    awayRecord: { games: 5, goalsFor: 6, goalsAgainst: 6 },
+  },
+];
+
 const state = {
-  lastSources: null,
+  fixtures: FIXTURES.map((fixture) => ({
+    ...fixture,
+    market: fixture.seedMarket,
+    marketSource: 'Seed market',
+    marketTitle: 'Seed market baseline',
+    marketLoading: true,
+  })),
 };
 
 function pct(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function numberValue(id, fallback = 0) {
-  const value = Number($(id).value);
-  return Number.isFinite(value) ? value : fallback;
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function clamp(value, min, max) {
@@ -27,7 +128,7 @@ function poissonProbability(k, lambda) {
   return Math.exp(-lambda) * Math.pow(lambda, k) / factorial(k);
 }
 
-function dixonColesAdjustment(homeGoals, awayGoals, lambdaHome, lambdaAway, rho) {
+function dixonColesAdjustment(homeGoals, awayGoals, lambdaHome, lambdaAway, rho = -0.08) {
   if (homeGoals === 0 && awayGoals === 0) return Math.max(0.01, 1 - lambdaHome * lambdaAway * rho);
   if (homeGoals === 0 && awayGoals === 1) return Math.max(0.01, 1 + lambdaHome * rho);
   if (homeGoals === 1 && awayGoals === 0) return Math.max(0.01, 1 + lambdaAway * rho);
@@ -40,17 +141,13 @@ function normalizeMatrix(matrix) {
   return matrix.map((row) => row.map((cell) => ({ ...cell, probability: cell.probability / total })));
 }
 
-function buildScoreMatrix(lambdaHome, lambdaAway, maxGoals, rho) {
+function buildScoreMatrix(lambdaHome, lambdaAway, maxGoals = 7) {
   const matrix = [];
   for (let h = 0; h <= maxGoals; h += 1) {
     const row = [];
     for (let a = 0; a <= maxGoals; a += 1) {
       const base = poissonProbability(h, lambdaHome) * poissonProbability(a, lambdaAway);
-      row.push({
-        homeGoals: h,
-        awayGoals: a,
-        probability: base * dixonColesAdjustment(h, a, lambdaHome, lambdaAway, rho),
-      });
+      row.push({ homeGoals: h, awayGoals: a, probability: base * dixonColesAdjustment(h, a, lambdaHome, lambdaAway) });
     }
     matrix.push(row);
   }
@@ -72,15 +169,15 @@ function outcomeTotals(matrix) {
 }
 
 function normalizeOutcomeProbabilities(probabilities) {
-  const home = Number(probabilities.home) || 0;
-  const draw = Number(probabilities.draw) || 0;
-  const away = Number(probabilities.away) || 0;
+  const home = Number(probabilities?.home) || 0;
+  const draw = Number(probabilities?.draw) || 0;
+  const away = Number(probabilities?.away) || 0;
   const total = home + draw + away;
   if (total <= 0) return { home: 1 / 3, draw: 1 / 3, away: 1 / 3 };
   return { home: home / total, draw: draw / total, away: away / total };
 }
 
-function blendOutcomeProbabilities(modelTotals, marketProbabilities, marketWeight) {
+function blendOutcomeProbabilities(modelTotals, marketProbabilities, marketWeight = 0.55) {
   const model = normalizeOutcomeProbabilities(modelTotals);
   const market = normalizeOutcomeProbabilities(marketProbabilities);
   return normalizeOutcomeProbabilities({
@@ -103,24 +200,15 @@ function reweightMatrixToOutcomeTargets(matrix, targets) {
   }))));
 }
 
-function topScores(matrix, limit = 10) {
+function topScores(matrix, limit = 3) {
   return matrix.flat().sort((a, b) => b.probability - a.probability).slice(0, limit);
 }
 
-function getRecord(prefix) {
-  return {
-    games: Math.max(1, numberValue(`${prefix}Games`, 5)),
-    goalsFor: Math.max(0, numberValue(`${prefix}GF`, 0)),
-    goalsAgainst: Math.max(0, numberValue(`${prefix}GA`, 0)),
-  };
-}
-
 function deriveLambdas(homeRecord, awayRecord) {
-  const mu = numberValue('globalMean', 1.35);
+  const mu = 1.35;
   const homeAdvantage = 1.06;
   const hGames = Math.max(1, homeRecord.games);
   const aGames = Math.max(1, awayRecord.games);
-
   const homeAttack = clamp((homeRecord.goalsFor / hGames) / mu, 0.35, 2.8);
   const homeDefenseWeakness = clamp((homeRecord.goalsAgainst / hGames) / mu, 0.35, 2.8);
   const awayAttack = clamp((awayRecord.goalsFor / aGames) / mu, 0.35, 2.8);
@@ -129,172 +217,140 @@ function deriveLambdas(homeRecord, awayRecord) {
   return {
     lambdaHome: clamp(mu * homeAdvantage * homeAttack * awayDefenseWeakness, 0.15, 4.5),
     lambdaAway: clamp(mu * awayAttack * homeDefenseWeakness, 0.15, 4.5),
-    diagnostics: {
-      'λ 主隊': null,
-      'λ 客隊': null,
-      '主隊場均進球': homeRecord.goalsFor / hGames,
-      '主隊場均失球': homeRecord.goalsAgainst / hGames,
-      '客隊場均進球': awayRecord.goalsFor / aGames,
-      '客隊場均失球': awayRecord.goalsAgainst / aGames,
-      '主隊攻擊力': homeAttack,
-      '客隊攻擊力': awayAttack,
-    },
   };
 }
 
-function getMarketProbabilities() {
-  return normalizeOutcomeProbabilities({
-    home: numberValue('marketHome', 0) / 100,
-    draw: numberValue('marketDraw', 0) / 100,
-    away: numberValue('marketAway', 0) / 100,
-  });
-}
-
-function renderOutcome(totals) {
-  $('outHome').textContent = pct(totals.home);
-  $('outDraw').textContent = pct(totals.draw);
-  $('outAway').textContent = pct(totals.away);
-}
-
-function renderTopScores(scores) {
-  $('topScores').innerHTML = scores.map((cell, index) => {
-    const result = cell.homeGoals > cell.awayGoals ? '主勝' : cell.homeGoals < cell.awayGoals ? '客勝' : '和局';
-    return `<tr><td>${index + 1}</td><td>${cell.homeGoals}-${cell.awayGoals}</td><td>${result}</td><td>${pct(cell.probability)}</td></tr>`;
-  }).join('');
-}
-
-function renderDiagnostics(lambdaHome, lambdaAway, diagnostics, modelTotals, marketWeight) {
-  const items = {
-    'λ 主隊': lambdaHome,
-    'λ 客隊': lambdaAway,
-    ...diagnostics,
-    '模型主勝': modelTotals.home,
-    '模型和局': modelTotals.draw,
-    '模型客勝': modelTotals.away,
-    '市場權重': marketWeight,
-  };
-  $('diagnostics').innerHTML = Object.entries(items)
-    .filter(([, value]) => value !== null && value !== undefined)
-    .map(([label, value]) => `<div class="diagnostic-item"><span>${label}</span><span>${Number(value).toFixed(3)}</span></div>`)
-    .join('');
-}
-
-function renderMatrix(matrix) {
-  const maxProb = Math.max(...matrix.flat().map((cell) => cell.probability));
-  $('scoreMatrix').innerHTML = matrix.flat().map((cell) => {
-    const hot = cell.probability >= maxProb * 0.75 ? ' hot' : '';
-    return `<div class="cell${hot}"><strong>${cell.homeGoals}-${cell.awayGoals}</strong><small>${pct(cell.probability)}</small></div>`;
-  }).join('');
-}
-
-function predict() {
-  const homeTeam = $('homeTeam').value.trim() || 'Home';
-  const awayTeam = $('awayTeam').value.trim() || 'Away';
-  $('homeLabel').textContent = homeTeam;
-  $('awayLabel').textContent = awayTeam;
-
-  const homeRecord = getRecord('home');
-  const awayRecord = getRecord('away');
-  const market = getMarketProbabilities();
-  const marketWeight = numberValue('marketWeight', 55) / 100;
-  const rho = numberValue('rho', -0.08);
-
-  const { lambdaHome, lambdaAway, diagnostics } = deriveLambdas(homeRecord, awayRecord);
-  const rawMatrix = buildScoreMatrix(lambdaHome, lambdaAway, 7, rho);
+function predictFixture(fixture) {
+  const { lambdaHome, lambdaAway } = deriveLambdas(fixture.homeRecord, fixture.awayRecord);
+  const rawMatrix = buildScoreMatrix(lambdaHome, lambdaAway);
   const modelTotals = outcomeTotals(rawMatrix);
-  const blendedTargets = blendOutcomeProbabilities(modelTotals, market, marketWeight);
-  const calibratedMatrix = reweightMatrixToOutcomeTargets(rawMatrix, blendedTargets);
-  const totals = outcomeTotals(calibratedMatrix);
-  const scores = topScores(calibratedMatrix, 10);
-  const best = scores[0];
-
-  $('bestScore').textContent = `${best.homeGoals}-${best.awayGoals}`;
-  $('bestScoreProb').textContent = `${homeTeam} vs ${awayTeam}｜單一最可能比分機率 ${pct(best.probability)}`;
-
-  renderOutcome(totals);
-  renderTopScores(scores);
-  renderDiagnostics(lambdaHome, lambdaAway, diagnostics, modelTotals, marketWeight);
-  renderMatrix(calibratedMatrix);
+  const targets = blendOutcomeProbabilities(modelTotals, fixture.market);
+  const calibratedMatrix = reweightMatrixToOutcomeTargets(rawMatrix, targets);
+  const scores = topScores(calibratedMatrix);
+  return { scores, totals: outcomeTotals(calibratedMatrix), lambdaHome, lambdaAway };
 }
 
-function recordSummary(record) {
-  if (!record || !record.games) return '未取得可用戰績。';
-  return `${record.games} 場｜${record.wins ?? 0}勝 ${record.draws ?? 0}和 ${record.losses ?? 0}負｜進 ${record.goalsFor} / 失 ${record.goalsAgainst}`;
+function sourceClass(source) {
+  if (source === 'Polymarket') return 'source-polymarket';
+  if (source === 'Kalshi') return 'source-kalshi';
+  return 'source-seed';
 }
 
-function applyRecord(prefix, payload) {
-  const record = payload?.record;
-  if (!payload?.ok || !record?.games) return false;
-  $(`${prefix}Games`).value = record.games;
-  $(`${prefix}GF`).value = record.goalsFor;
-  $(`${prefix}GA`).value = record.goalsAgainst;
-  $(`${prefix}RecordText`).textContent = recordSummary(record);
-  return true;
+function renderFixtureCard(fixture) {
+  const prediction = predictFixture(fixture);
+  const best = prediction.scores[0];
+  const market = normalizeOutcomeProbabilities(fixture.market);
+  const sourceLabel = fixture.marketLoading ? 'Checking markets...' : fixture.marketSource;
+  const topScores = prediction.scores.map((score) => `
+    <span>${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>
+  `).join('');
+
+  return `
+    <article class="fixture-card">
+      <div class="fixture-card__top">
+        <div>
+          <p class="eyebrow">${fixture.group}</p>
+          <h2>${escapeHtml(fixture.home)} <span>vs</span> ${escapeHtml(fixture.away)}</h2>
+          <p class="muted">${escapeHtml(fixture.kickoff)} · ${escapeHtml(fixture.venue)}</p>
+        </div>
+        <span class="source-pill ${sourceClass(fixture.marketSource)}">${escapeHtml(sourceLabel)}</span>
+      </div>
+
+      <div class="prediction-row">
+        <div>
+          <p class="label">最可能比分</p>
+          <strong class="best-score">${best.homeGoals}-${best.awayGoals}</strong>
+          <small>${pct(best.probability)}</small>
+        </div>
+        <div class="market-grid">
+          <span><b>${pct(market.home)}</b><small>${escapeHtml(fixture.home)} 勝</small></span>
+          <span><b>${pct(market.draw)}</b><small>和局</small></span>
+          <span><b>${pct(market.away)}</b><small>${escapeHtml(fixture.away)} 勝</small></span>
+        </div>
+      </div>
+
+      <div class="top-scores">${topScores}</div>
+      <p class="market-title">${escapeHtml(fixture.marketTitle)}</p>
+    </article>
+  `;
 }
 
-function applyMarket(payload) {
-  const probabilities = payload?.polymarket?.best?.probabilities || payload?.best?.probabilities;
-  const title = payload?.polymarket?.best?.title || payload?.best?.title;
-  if (!probabilities) return false;
-  $('marketHome').value = (probabilities.home * 100).toFixed(1);
-  $('marketDraw').value = (probabilities.draw * 100).toFixed(1);
-  $('marketAway').value = (probabilities.away * 100).toFixed(1);
-  $('marketSource').textContent = `目前使用 Polymarket 解析：${title}`;
-  return true;
+function renderFixtures() {
+  $('fixtures').innerHTML = state.fixtures.map(renderFixtureCard).join('');
+  const counts = state.fixtures.reduce((acc, fixture) => {
+    acc[fixture.marketSource] = (acc[fixture.marketSource] || 0) + 1;
+    return acc;
+  }, {});
+  $('marketSummary').textContent = `Polymarket ${counts.Polymarket || 0} · Kalshi ${counts.Kalshi || 0} · Seed market ${counts['Seed market'] || 0}`;
 }
 
-async function fetchSources() {
-  const home = $('homeTeam').value.trim();
-  const away = $('awayTeam').value.trim();
-  if (!home || !away) return;
+function hasCompleteMarket(probabilities) {
+  return probabilities
+    && Number.isFinite(probabilities.home)
+    && Number.isFinite(probabilities.draw)
+    && Number.isFinite(probabilities.away)
+    && probabilities.home > 0
+    && probabilities.draw > 0
+    && probabilities.away > 0;
+}
 
-  $('fetchSources').disabled = true;
-  $('sourceNotes').innerHTML = '正在抓 TheSportsDB / Polymarket / Kalshi…';
-
+async function refreshFixtureMarket(fixture) {
   try {
-    const response = await fetch(`/api/sources?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
+    const response = await fetch(`/api/fixture-market?home=${encodeURIComponent(fixture.home)}&away=${encodeURIComponent(fixture.away)}`);
     const payload = await response.json();
-    state.lastSources = payload;
-
-    const homeApplied = applyRecord('home', payload.homeRecord);
-    const awayApplied = applyRecord('away', payload.awayRecord);
-    const marketApplied = applyMarket(payload);
-
-    const notes = [];
-    notes.push(homeApplied ? `主隊已套用：${recordSummary(payload.homeRecord.record)}` : `主隊資料未套用：${payload.homeRecord?.error || 'unknown error'}`);
-    notes.push(awayApplied ? `客隊已套用：${recordSummary(payload.awayRecord.record)}` : `客隊資料未套用：${payload.awayRecord?.error || 'unknown error'}`);
-    notes.push(marketApplied ? '已套用 Polymarket 勝平負機率。' : `Polymarket 未解析到完整勝平負盤：${payload.polymarket?.error || '請手動填機率'}`);
-    notes.push(payload.kalshi?.enabled ? `Kalshi：${payload.kalshi.ok ? `找到 ${payload.kalshi.markets.length} 個市場摘要` : payload.kalshi.error}` : 'Kalshi：未設定金鑰，已略過。');
-    $('sourceNotes').innerHTML = notes.map((note) => `<div>• ${note}</div>`).join('');
-
-    predict();
+    const probabilities = payload?.market?.probabilities;
+    if (payload.source === 'Polymarket' && hasCompleteMarket(probabilities)) {
+      fixture.market = probabilities;
+      fixture.marketSource = 'Polymarket';
+      fixture.marketTitle = payload.market.title || 'Polymarket match winner';
+    } else if (payload.source === 'Kalshi' && hasCompleteMarket(probabilities)) {
+      fixture.market = probabilities;
+      fixture.marketSource = 'Kalshi';
+      fixture.marketTitle = payload.market.title || 'Kalshi market';
+    } else {
+      fixture.market = fixture.seedMarket;
+      fixture.marketSource = 'Seed market';
+      fixture.marketTitle = 'Seed market baseline';
+    }
   } catch (error) {
-    $('sourceNotes').innerHTML = `資料源請求失敗：${error.message}`;
+    fixture.market = fixture.seedMarket;
+    fixture.marketSource = 'Seed market';
+    fixture.marketTitle = `Seed market baseline (${error.message})`;
   } finally {
-    $('fetchSources').disabled = false;
+    fixture.marketLoading = false;
+    renderFixtures();
   }
+}
+
+async function refreshAllMarkets() {
+  $('refreshMarkets').disabled = true;
+  state.fixtures = state.fixtures.map((fixture) => ({
+    ...fixture,
+    market: fixture.seedMarket,
+    marketSource: 'Seed market',
+    marketTitle: 'Seed market baseline',
+    marketLoading: true,
+  }));
+  renderFixtures();
+  await Promise.all(state.fixtures.map(refreshFixtureMarket));
+  $('refreshMarkets').disabled = false;
 }
 
 async function checkHealth() {
   try {
     const response = await fetch('/api/health');
     const payload = await response.json();
-    if (payload.ok) {
-      $('health').className = 'status status-ok';
-      $('health').textContent = payload.kalshiEnabled ? '後端已連線｜Kalshi 已啟用' : '後端已連線｜Kalshi 未啟用';
-      return;
-    }
-    throw new Error('health not ok');
+    if (!payload.ok) throw new Error('health not ok');
+    $('health').className = 'status status-ok';
+    $('health').textContent = payload.kalshiEnabled ? '後端已連線｜Kalshi 已啟用' : '後端已連線｜Kalshi 未啟用';
   } catch (_error) {
     $('health').className = 'status status-bad';
     $('health').textContent = '後端未連線';
   }
 }
 
-$('fetchSources').addEventListener('click', fetchSources);
-$('predict').addEventListener('click', predict);
-['homeTeam','awayTeam','homeGames','homeGF','homeGA','awayGames','awayGF','awayGA','marketHome','marketDraw','marketAway','marketWeight','globalMean','rho']
-  .forEach((id) => $(id).addEventListener('input', predict));
+$('refreshMarkets').addEventListener('click', refreshAllMarkets);
 
 checkHealth();
-predict();
+renderFixtures();
+refreshAllMarkets();

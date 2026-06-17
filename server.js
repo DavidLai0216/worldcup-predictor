@@ -171,6 +171,29 @@ async function fetchKalshi(home, away) {
   };
 }
 
+async function fetchFixtureMarket(home, away) {
+  const polymarket = await fetchPolymarket(home, away);
+  if (polymarket.best?.probabilities) {
+    return {
+      ok: true,
+      source: 'Polymarket',
+      market: polymarket.best,
+      polymarket,
+      kalshi: null,
+    };
+  }
+
+  const kalshi = await fetchKalshi(home, away);
+  return {
+    ok: false,
+    source: 'Seed market',
+    market: null,
+    polymarket,
+    kalshi,
+    error: polymarket.error || kalshi.error || 'No complete 3-way market parsed',
+  };
+}
+
 async function handleApi(req, res, url) {
   try {
     if (url.pathname === '/api/health') {
@@ -197,6 +220,12 @@ async function handleApi(req, res, url) {
       const home = requireParam(url.searchParams, 'home');
       const away = requireParam(url.searchParams, 'away');
       return jsonResponse(res, 200, await fetchKalshi(home, away));
+    }
+
+    if (url.pathname === '/api/fixture-market') {
+      const home = requireParam(url.searchParams, 'home');
+      const away = requireParam(url.searchParams, 'away');
+      return jsonResponse(res, 200, await fetchFixtureMarket(home, away));
     }
 
     if (url.pathname === '/api/sources') {
