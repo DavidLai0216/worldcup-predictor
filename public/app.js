@@ -861,7 +861,7 @@ function buildOverrideFromEspnEvent(event, fixture, summary) {
       source: 'ESPN 即時比分',
       sourceUrl: sourceLink,
       updatedAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' }),
-      note: completed ? 'ESPN 已標記本場完賽，今日賽程顯示最終比數。' : 'ESPN 即時資料更新中；主體賽程卡仍保留賽前預測。',
+      note: completed ? '最終比數已確認。' : '即時比分更新中。',
     },
   };
 }
@@ -1020,14 +1020,14 @@ function renderTaiwanOdds(fixture) {
   const odds = state.taiwanOdds.get(fixtureKey(fixture.home, fixture.away));
   const updated = state.taiwanOddsUpdatedAt
     ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })
-    : '讀取中';
+    : '更新中';
   if (!odds) {
-    const message = state.taiwanOddsError ? `讀取失敗：${state.taiwanOddsError}` : '待台灣運彩開盤或資料同步';
+    const message = state.taiwanOddsError ? `盤口暫時無法更新：${state.taiwanOddsError}` : '台灣運彩尚未開盤';
     return `
       <div class="taiwan-odds">
         <div class="taiwan-odds__header">
           <strong>台灣運彩</strong>
-          <a href="https://www.sportslottery.com.tw/" target="_blank" rel="noreferrer">官網</a>
+          <a href="https://www.sportslottery.com.tw/" target="_blank" rel="noreferrer">官方盤口</a>
         </div>
         <p class="small-text">${message}</p>
       </div>
@@ -1040,7 +1040,7 @@ function renderTaiwanOdds(fixture) {
         <strong>台灣運彩</strong>
         <span>場次 ${odds.gameNo}｜${updated}</span>
       </div>
-      <p class="small-text">官方場次：${odds.title}；下方已依本卡片隊伍順序排列。</p>
+      <p class="small-text">官方場次：${odds.title}｜隊伍順序已依本場對戰排列</p>
       <div class="taiwan-odds__market">
         <p class="label">不讓分賠率</p>
         ${renderOddsChoices(odds.moneyline, fixture)}
@@ -1065,7 +1065,7 @@ function fanPortrait(code, fixture) {
   return {
     imageUrl: isDisplayable ? imageUrl : null,
     isDisplayable,
-    source: isDisplayable ? source : '真實授權照片待補',
+    source: isDisplayable ? source : '照片待更新',
     sourceUrl: isDisplayable ? entry.sourceUrl || null : null,
     kind: entry.kind || 'pending',
     searchQuery: entry.searchQuery || `${team(code).name} adult woman football fan portrait`,
@@ -1085,9 +1085,9 @@ function renderFanPortrait(code, fixture) {
       : `${t.name}成年女性球迷真實照片`;
   const media = portrait.imageUrl
     ? `<img src="${escapeHtml(portrait.imageUrl)}" alt="${escapeHtml(altText)}" loading="lazy" />`
-    : `<div class="fan-card__missing" role="img" aria-label="${escapeHtml(t.name)}真實授權球迷照片待補">
+    : `<div class="fan-card__missing" role="img" aria-label="${escapeHtml(t.name)}球迷照片待更新">
         <strong>${t.flag}</strong>
-        <span>待補真實照片</span>
+        <span>照片待更新</span>
       </div>`;
   return `
     <figure class="fan-card ${portrait.isDisplayable ? 'fan-card--real' : 'fan-card--missing'} ${portrait.kind === 'player' ? 'fan-card--player' : ''} ${portrait.kind === 'landmark' ? 'fan-card--landmark' : ''}">
@@ -1313,7 +1313,7 @@ function renderOddsMiniRow(label, choices) {
 function renderBettingOverview(fixtures) {
   const updated = state.taiwanOddsUpdatedAt
     ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })
-    : '同步中';
+    : '更新中';
   const cards = fixtures.slice(0, 6).map((fixture) => {
     const displayTime = fixtureDisplayDateTime(fixture.date);
     const oddsSummary = fixtureOddsSummary(fixture);
@@ -1329,7 +1329,7 @@ function renderBettingOverview(fixtures) {
           ${renderOddsMiniRow('不讓分', oddsSummary.moneyline)}
           ${renderOddsMiniRow(oddsSummary.odds.handicap?.name || '讓分', oddsSummary.handicap)}
         ` : `
-          <p class="small-text">${state.taiwanOddsError ? `台灣運彩讀取失敗：${state.taiwanOddsError}` : '台灣運彩待開盤，先顯示模型機率'}</p>
+          <p class="small-text">${state.taiwanOddsError ? `台灣運彩暫時無法更新：${state.taiwanOddsError}` : '台灣運彩尚未開盤｜模型機率'}</p>
           <div class="market-mini">
             <span>模型</span>
             <b>${team(fixture.home).name} ${pct(prediction.outcome.home)}</b>
@@ -1345,10 +1345,10 @@ function renderBettingOverview(fixtures) {
     <aside class="bettor-panel" aria-label="賠率摘要">
       <div class="panel-heading">
         <p class="eyebrow">盤口摘要</p>
-        <h2>先看可下注資訊</h2>
-        <p>列出今日與明日賽事的台灣運彩盤口；未開盤時以模型勝平負機率補位。</p>
+        <h2>台灣運彩盤口</h2>
+        <p>今日與明日賽事的不讓分、讓分與模型勝平負機率。</p>
       </div>
-      <div class="odds-board">${cards || '<p class="empty-slot">今日與明日目前沒有可顯示的盤口</p>'}</div>
+      <div class="odds-board">${cards || '<p class="empty-slot">今日與明日尚無盤口</p>'}</div>
     </aside>
   `;
 }
@@ -1363,9 +1363,9 @@ function renderHome() {
     <section class="home-command">
       <div class="fan-panel">
         <div class="panel-heading">
-          <p class="eyebrow">球迷入口</p>
+          <p class="eyebrow">比分與賽程</p>
           <h2>比分、摘要、下一場</h2>
-          <p>首頁只放最需要立刻知道的賽事狀態；完整分組與模型請切到上方分頁。</p>
+          <p>今日與明日賽事置頂，時間皆為台灣時間。</p>
         </div>
         ${renderDateSchedule(today, {
           eyebrow: '今日賽程',
@@ -1445,7 +1445,7 @@ function renderRegressionPanel() {
       <div>
         <p class="eyebrow">賽後迴歸校正</p>
         <h2>每場完賽後自動重算預測偏差</h2>
-        <p>系統會比對原始賽前 λ 與實際比分，估計目前模型是否高估或低估主隊、客隊與總進球，並套用到所有未賽場次。</p>
+        <p>依已完賽比分修正主隊、客隊與總進球偏差，更新後續未賽場次機率。</p>
       </div>
       <div class="regression-grid">
         <span><b>${regressionModel.sampleCount}</b><small>已完賽樣本</small></span>
@@ -1462,13 +1462,13 @@ function renderRegressionPanel() {
 function renderEmptyKnockout(tabId) {
   const tab = KNOCKOUT_TABS.find((item) => item.id === tabId);
   const rows = Array.from({ length: tab.slots }, (_, index) => `
-    <tr><td>第 ${index + 1} 場</td><td class="empty-slot">待第一輪晉級隊伍產生</td><td class="empty-slot">待排定</td><td class="empty-slot">待更新</td></tr>
+    <tr><td>第 ${index + 1} 場</td><td class="empty-slot">晉級隊伍待定</td><td class="empty-slot">時間待定</td><td class="empty-slot">摘要待定</td></tr>
   `).join('');
   $('content').innerHTML = `
     <section class="group-section inactive-stage">
       <div class="group-header">
         <h2>${tab.label}</h2>
-        <p>尚未開賽。第一輪晉級名單確認後，這裡會立即寫入下一輪表格。</p>
+        <p>晉級名單確認後更新對戰、時間與摘要。</p>
       </div>
       <table class="standings-table">
         <thead><tr><th>場次</th><th>對戰</th><th>時間</th><th>摘要</th></tr></thead>
@@ -1480,18 +1480,20 @@ function renderEmptyKnockout(tabId) {
 
 function renderSourceNote() {
   const liveStatus = state.lastLiveUpdate
-    ? `即時比分最近同步：${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' })}。`
-    : '即時比分同步中。';
+    ? `比分更新 ${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' })}`
+    : '比分更新中';
   const oddsStatus = state.taiwanOddsUpdatedAt
-    ? `台灣運彩賠率最近同步：${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}。`
-    : '台灣運彩賠率同步中。';
+    ? `台灣運彩 ${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}`
+    : '台灣運彩更新中';
   const fanStatus = state.fanPortraitsUpdatedAt
-    ? `球迷肖像最近同步：${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}。`
-    : '球迷肖像同步中。';
-  const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
-  const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
-  const fanError = state.fanPortraitsError ? ` 球迷肖像同步暫時失敗：${state.fanPortraitsError}。` : '';
-  $('sourceNote').textContent = `資料更新：${todayDateKey()}。今日看板服務兩種使用者：球迷看比分與摘要，投注者看盤口與模型；完整賽程、賠率預測與各組積分集中在分頁。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
+    ? `照片 ${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}`
+    : '照片更新中';
+  const error = state.liveError ? `比分暫停更新：${state.liveError}` : '';
+  const oddsError = state.taiwanOddsError ? `台灣運彩暫停更新：${state.taiwanOddsError}` : '';
+  const fanError = state.fanPortraitsError ? `照片暫停更新：${state.fanPortraitsError}` : '';
+  $('sourceNote').textContent = [`資料日期 ${todayDateKey()}`, liveStatus, oddsStatus, fanStatus, error, oddsError, fanError]
+    .filter(Boolean)
+    .join('｜');
 }
 
 function render() {
