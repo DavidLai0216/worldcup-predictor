@@ -348,6 +348,7 @@ const TAIWAN_LOTTERY_WC_URL = 'data/taiwan-odds.json';
 const FAN_PORTRAITS_URL = 'data/fan-portraits.json';
 const state = {
   activeTab: 'home',
+  homeFilter: 'all',
   liveOverrides: new Map(),
   taiwanOdds: new Map(),
   taiwanOddsUpdatedAt: null,
@@ -525,6 +526,14 @@ function predictMatch(homeCode, awayCode) {
     .slice(0, 10);
   return { scores, outcome, lambdaHome, lambdaAway, rawLambdaHome: raw.lambdaHome, rawLambdaAway: raw.lambdaAway };
 }
+
+const HOME_FILTERS = [
+  { id: 'all', label: '全部' },
+  { id: 'soon', label: '近期開賽' },
+  { id: 'edge', label: '模型差異' },
+  { id: 'highOdds', label: '高賠率' },
+  { id: 'strong', label: '強隊對決' },
+];
 
 function renderTabs() {
   const tabs = [
@@ -971,6 +980,7 @@ function renderPrediction(fixture) {
   const prediction = predictMatch(fixture.home, fixture.away);
   const best = prediction.scores[0];
   return `
+    ${renderMatchInsights(fixture)}
     <div class="prediction-summary">
       <div>
         <p class="label">最可能比分</p>
@@ -1263,6 +1273,7 @@ function renderTodayFixture(fixture, options = {}) {
         </div>
         <span class="source-pill">${fixture.status}</span>
       </div>
+      ${renderMatchInsights(fixture)}
       ${renderTodayMatchStatus(fixture)}
       ${renderSummary(fixture)}
     </article>
@@ -1270,9 +1281,10 @@ function renderTodayFixture(fixture, options = {}) {
 }
 
 function renderDateSchedule(dateKey, options = {}) {
-  const { eyebrow = '賽程', title = dateKey, description = '', emptyText = '目前沒有排定賽事', compact = false } = options;
+  const { eyebrow = '賽程', title = dateKey, description = '', emptyText = '目前沒有排定賽事', compact = false, filterFn = () => true } = options;
   const fixtures = allFixtures()
     .filter((fixture) => fixtureDateKey(fixture) === dateKey)
+    .filter(filterFn)
     .sort(fixtureSort);
   const body = fixtures.length
     ? `<div class="fixtures fixtures--today">${fixtures.map((fixture) => renderTodayFixture(fixture, { compact })).join('')}</div>`
@@ -1299,6 +1311,113 @@ function fixtureOddsSummary(fixture) {
   return { odds, moneyline, handicap };
 }
 
+function outcomeProbabilityForChoice(choice, fixture, prediction) {
+  if (choice.side === 'D') return prediction.outcome.draw;
+  if (choice.teamCode === fixture.home) return prediction.outcome.home;
+  if (choice.teamCode === fixture.away) return prediction.outcome.away;
+  return null;
+}
+
+function normalizedMarketProbabilities(choices) {
+  const valid = choices.filter((choice) => Number.isFinite(choice.odds) && choice.odds > 1);
+  const total = valid.reduce((sum, choice) => sum + (1 / choice.odds), 0);
+  if (!valid.length || total <= 0) return new Map();
+  return new Map(valid.map((choice) => [choice.name, (1 / choice.odds) / total]));
+}
+
+function fixtureMarketEdges(fixture) {
+  const prediction = predictMatch(fixture.home, fixture.away);
+  const oddsSummary = fixtureOddsSummary(fixture);
+  if (!oddsSummary?.moneyline?.length) return [];
+  const market = normalizedMarketProbabilities(oddsSummary.moneyline);
+  return oddsSummary.moneyline.map((choice) => {
+    const modelProbability = outcomeProbabilityForChoice(choice, fixture, prediction);
+    const marketProbability = market.get(choice.name);
+    if (!Number.isFinite(modelProbability) || !Number.isFinite(marketProbability)) return null;
+    return {
+      choice,
+      modelProbability,
+      marketProbability,
+      edge: modelProbability - marketProbability,
+      fairOdds: modelProbability > 0 ? 1 / modelProbability : null,
+    };
+  }).filter(Boolean).sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
+}
+
+function bestFixtureEdge(fixture) {
+  return fixtureMarketEdges(fixture)[0] || null;
+}
+
+function hasHighOdds(fixture) {
+  const oddsSummary = fixtureOddsSummary(fixture);
+  return Boolean(oddsSummary?.moneyline?.some((choice) => choice.odds >= 3.0) || oddsSummary?.handicap?.some((choice) => choice.odds >= 2.2));
+}
+
+function isStrongMatchup(fixture) {
+  const home = teamStrength(fixture.home);
+  const away = teamStrength(fixture.away);
+  return home.gf + away.gf >= 2.7 || Math.abs(home.gf - away.gf) <= 0.18;
+}
+
+function homeFilterMatches(fixture) {
+  if (state.homeFilter === 'soon') return fixture.status !== '完賽';
+  if (state.homeFilter === 'edge') return Math.abs(bestFixtureEdge(fixture)?.edge || 0) >= 0.06;
+  if (state.homeFilter === 'highOdds') return hasHighOdds(fixture);
+  if (state.homeFilter === 'strong') return isStrongMatchup(fixture);
+  return true;
+}
+
+function renderHomeFilters() {
+  return `
+    <div class="quick-filters" aria-label="賽事快篩">
+      ${HOME_FILTERS.map((filter) => `
+        <button type="button" class="quick-filter ${state.homeFilter === filter.id ? 'active' : ''}" data-home-filter="${filter.id}">
+          ${filter.label}
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderModelPerformance() {
+  const model = buildRegressionModel();
+  const before = model.maeBefore === null ? '待累積' : model.maeBefore.toFixed(2);
+  const after = model.maeAfter === null ? '待累積' : model.maeAfter.toFixed(2);
+  return `
+    <section class="performance-strip" aria-label="模型歷史績效">
+      <span><b>${model.sampleCount}</b><small>已完賽樣本</small></span>
+      <span><b>${pct(model.credibility)}</b><small>校正權重</small></span>
+      <span><b>${before} → ${after}</b><small>平均進球誤差</small></span>
+      <span><b>${model.homeFactor.toFixed(2)} / ${model.awayFactor.toFixed(2)}</b><small>主客修正</small></span>
+    </section>
+  `;
+}
+
+function teamRecordText(code) {
+  const group = GROUPS.find((item) => item.standings.some(([teamCode]) => teamCode === code));
+  const row = group ? currentStandings(group).find(([teamCode]) => teamCode === code) : null;
+  if (!row) return `${team(code).name} 戰績待定`;
+  const [, played, wins, draws, losses, gf, ga, gd, points] = row;
+  return `${team(code).name} ${wins}勝${draws}和${losses}負｜進${gf}失${ga}｜${points}分`;
+}
+
+function renderMatchInsights(fixture) {
+  const edge = bestFixtureEdge(fixture);
+  const prediction = predictMatch(fixture.home, fixture.away);
+  const bestScore = prediction.scores[0];
+  const edgeText = edge
+    ? `${edge.choice.name}：模型 ${pct(edge.modelProbability)} / 盤口 ${pct(edge.marketProbability)} / 差 ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}`
+    : '盤口差異待更新';
+  return `
+    <div class="insight-strip">
+      <span>${teamRecordText(fixture.home)}</span>
+      <span>${teamRecordText(fixture.away)}</span>
+      <span>最可能比分 ${bestScore.homeGoals}-${bestScore.awayGoals}（${pct(bestScore.probability)}）</span>
+      <span>${edgeText}</span>
+    </div>
+  `;
+}
+
 function renderOddsMiniRow(label, choices) {
   if (!choices?.length) return `<p class="small-text">${label}：目前未開</p>`;
   return `
@@ -1317,6 +1436,7 @@ function renderBettingOverview(fixtures) {
     const displayTime = fixtureDisplayDateTime(fixture.date);
     const oddsSummary = fixtureOddsSummary(fixture);
     const prediction = predictMatch(fixture.home, fixture.away);
+    const edge = bestFixtureEdge(fixture);
     return `
       <article class="odds-board-card">
         <div>
@@ -1327,6 +1447,7 @@ function renderBettingOverview(fixtures) {
           <p class="small-text">台灣運彩場次 ${oddsSummary.odds.gameNo}｜${updated}</p>
           ${renderOddsMiniRow('不讓分', oddsSummary.moneyline)}
           ${renderOddsMiniRow(oddsSummary.odds.handicap?.name || '讓分', oddsSummary.handicap)}
+          ${edge ? `<p class="edge-note">模型差異：${edge.choice.name} ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}｜公平賠 ${edge.fairOdds.toFixed(2)}</p>` : ''}
         ` : `
           <p class="small-text">${state.taiwanOddsError ? `台灣運彩暫時無法更新：${state.taiwanOddsError}` : '台灣運彩尚未開盤｜模型機率'}</p>
           <div class="market-mini">
@@ -1356,8 +1477,11 @@ function renderHome() {
   const tomorrow = tomorrowDateKey();
   const homeFixtures = allFixtures()
     .filter((fixture) => [today, tomorrow].includes(fixtureDateKey(fixture)))
+    .filter(homeFilterMatches)
     .sort(fixtureSort);
   $('content').innerHTML = `
+    ${renderHomeFilters()}
+    ${renderModelPerformance()}
     <section class="home-command">
       <div class="fan-panel">
         ${renderDateSchedule(today, {
@@ -1365,14 +1489,16 @@ function renderHome() {
           title: `${today} 賽事狀態`,
           description: '',
           emptyText: '今日目前沒有排定賽事',
-          compact: true
+          compact: true,
+          filterFn: homeFilterMatches
         })}
         ${renderDateSchedule(tomorrow, {
           eyebrow: '明日賽程',
           title: `${tomorrow} 即將舉辦`,
           description: '',
           emptyText: '明日目前沒有排定賽事',
-          compact: true
+          compact: true,
+          filterFn: homeFilterMatches
         })}
       </div>
       ${renderBettingOverview(homeFixtures)}
@@ -1502,6 +1628,13 @@ $('tabs').addEventListener('click', (event) => {
   const button = event.target.closest('[data-tab]');
   if (!button) return;
   state.activeTab = button.dataset.tab;
+  render();
+});
+
+$('content').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-home-filter]');
+  if (!button) return;
+  state.homeFilter = button.dataset.homeFilter;
   render();
 });
 
