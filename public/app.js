@@ -1147,7 +1147,6 @@ function renderGroups() {
       <section id="${groupAnchor(group)}" class="group-section">
         <div class="group-header">
           <h2>${group.name}</h2>
-          <p>四隊積分與完整小組賽賽程</p>
         </div>
         ${renderStandingTable(group)}
         <div class="fixtures">${fixtures.map(renderFixtureCard).join('')}</div>
@@ -1285,7 +1284,7 @@ function renderDateSchedule(dateKey, options = {}) {
           <p class="eyebrow">${eyebrow}</p>
           <h2>${title}</h2>
         </div>
-        <p>${description}</p>
+        ${description ? `<p>${description}</p>` : ''}
       </div>
       ${body}
     </section>
@@ -1346,7 +1345,6 @@ function renderBettingOverview(fixtures) {
       <div class="panel-heading">
         <p class="eyebrow">盤口摘要</p>
         <h2>台灣運彩盤口</h2>
-        <p>今日與明日賽事的不讓分、讓分與模型勝平負機率。</p>
       </div>
       <div class="odds-board">${cards || '<p class="empty-slot">今日與明日尚無盤口</p>'}</div>
     </aside>
@@ -1365,19 +1363,18 @@ function renderHome() {
         <div class="panel-heading">
           <p class="eyebrow">比分與賽程</p>
           <h2>比分、摘要、下一場</h2>
-          <p>今日與明日賽事置頂，時間皆為台灣時間。</p>
         </div>
         ${renderDateSchedule(today, {
           eyebrow: '今日賽程',
           title: `${today} 賽事狀態`,
-          description: '進行中比賽顯示即時動態；完賽顯示最終比數與摘要。',
+          description: '',
           emptyText: '今日目前沒有排定賽事',
           compact: true
         })}
         ${renderDateSchedule(tomorrow, {
           eyebrow: '明日賽程',
           title: `${tomorrow} 即將舉辦`,
-          description: '以下時間皆為台灣時間，採 24 小時制。',
+          description: '',
           emptyText: '明日目前沒有排定賽事',
           compact: true
         })}
@@ -1421,7 +1418,6 @@ function renderFullSchedule() {
           <p class="eyebrow">完整賽程</p>
           <h2>所有賽程表</h2>
         </div>
-        <p>以下時間皆為台灣時間，採 24 小時制。</p>
       </div>
       <div class="schedule-table-wrap">
         <table class="standings-table schedule-table">
