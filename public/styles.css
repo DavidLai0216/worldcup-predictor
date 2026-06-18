@@ -214,7 +214,7 @@ button.tab {
   margin-bottom: 16px;
 }
 
-.live-section {
+.today-section {
   background: #fffaf0;
   border: 1px solid #f0d2a3;
   border-radius: 8px;
@@ -357,7 +357,7 @@ td {
   box-shadow: inset 4px 0 0 var(--amber);
 }
 
-.fixtures--live {
+.fixtures--today {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 

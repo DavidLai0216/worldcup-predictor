@@ -847,7 +847,7 @@ function buildOverrideFromEspnEvent(event, fixture, summary) {
       source: 'ESPN 即時比分',
       sourceUrl: sourceLink,
       updatedAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      note: completed ? 'ESPN 已標記本場完賽，卡片已回到小組賽欄位。' : 'ESPN 即時資料更新中；完賽後會自動移回小組賽欄位。',
+      note: completed ? 'ESPN 已標記本場完賽，今日賽程顯示最終比數。' : 'ESPN 即時資料更新中；主體賽程卡仍保留賽前預測。',
     },
   };
 }
@@ -954,12 +954,6 @@ function renderSummary(fixture) {
 }
 
 function renderPrediction(fixture) {
-  if (fixture.status === '完賽') return `<div class="scoreline">${fixture.homeScore}-${fixture.awayScore}</div><p class="small-text">已完賽</p>`;
-  if (isLiveFixture(fixture)) {
-    const score = hasScore(fixture) ? `${fixture.homeScore}-${fixture.awayScore}` : '進行中';
-    const minute = fixture.meta.minute ? `目前 ${fixture.meta.minute}'` : '即時更新中';
-    return `<div class="scoreline live-text">${score}</div><p class="small-text">${minute}｜比賽摘要會隨最新資料更新</p>`;
-  }
   const prediction = predictMatch(fixture.home, fixture.away);
   const best = prediction.scores[0];
   return `
@@ -1128,15 +1122,13 @@ function renderFixtureCard(fixture) {
       </div>
       ${renderFanPortraits(fixture)}
       ${renderPrediction(fixture)}
-      ${renderSummary(fixture)}
     </article>
   `;
 }
 
 function renderGroups() {
-  const liveFixtures = allFixtures().filter(isLiveFixture);
-  $('content').innerHTML = `${renderLiveFixtures(liveFixtures)}${renderRegressionPanel()}${GROUPS.map((group) => {
-    const fixtures = currentFixturesForGroup(group).filter((fixture) => !isLiveFixture(fixture));
+  $('content').innerHTML = `${renderTodaySchedule()}${renderRegressionPanel()}${GROUPS.map((group) => {
+    const fixtures = currentFixturesForGroup(group);
     return `
       <section id="${groupAnchor(group)}" class="group-section">
         <div class="group-header">
@@ -1150,18 +1142,70 @@ function renderGroups() {
   }).join('')}`;
 }
 
-function renderLiveFixtures(fixtures) {
+function todayDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function fixtureDateKey(fixture) {
+  return String(fixture.date).slice(0, 10);
+}
+
+function fixtureTimeLabel(fixture) {
+  const time = String(fixture.date).match(/\d{2}:\d{2}/)?.[0];
+  return time || '時間待定';
+}
+
+function renderTodayMatchStatus(fixture) {
+  if (fixture.status === '完賽') {
+    const score = hasScore(fixture) ? `${fixture.homeScore}-${fixture.awayScore}` : '已完賽';
+    return `<div class="scoreline">${score}</div><p class="small-text">最終比數</p>`;
+  }
+  if (isLiveFixture(fixture)) {
+    const score = hasScore(fixture) ? `${fixture.homeScore}-${fixture.awayScore}` : '進行中';
+    const minute = fixture.meta.minute ? `目前 ${fixture.meta.minute}'` : '即時更新中';
+    return `<div class="scoreline live-text">${score}</div><p class="small-text">${minute}</p>`;
+  }
+  const prediction = predictMatch(fixture.home, fixture.away);
+  const best = prediction.scores[0];
+  return `<div class="scoreline">${best.homeGoals}-${best.awayGoals}</div><p class="small-text">${fixtureTimeLabel(fixture)}｜賽前預測最高比分</p>`;
+}
+
+function renderTodayFixture(fixture) {
+  return `
+    <article class="fixture-card today-fixture ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
+      <div class="fixture-card__top">
+        <div>
+          <p class="eyebrow">${fixture.group}｜${fixtureTimeLabel(fixture)}｜${fixture.venue}</p>
+          <h3><span class="team-name">${teamLabel(fixture.home)}</span><em>對</em><span class="team-name">${teamLabel(fixture.away)}</span></h3>
+        </div>
+        <span class="source-pill">${fixture.status}</span>
+      </div>
+      ${renderTodayMatchStatus(fixture)}
+      ${renderSummary(fixture)}
+    </article>
+  `;
+}
+
+function renderTodaySchedule() {
+  const today = todayDateKey();
+  const fixtures = allFixtures()
+    .filter((fixture) => fixtureDateKey(fixture) === today)
+    .sort((a, b) => Number(isLiveFixture(b)) - Number(isLiveFixture(a)) || String(a.date).localeCompare(String(b.date)));
   if (!fixtures.length) return '';
   return `
-    <section class="live-section">
+    <section class="today-section">
       <div class="group-header">
         <div>
-          <p class="eyebrow">即時戰況</p>
-          <h2>進行中的比賽</h2>
+          <p class="eyebrow">今日賽程</p>
+          <h2>${today} 賽事狀態</h2>
         </div>
-        <p>最新比分、進球時間與場上摘要</p>
+        <p>進行中比賽顯示即時動態；完賽顯示最終比數與摘要</p>
       </div>
-      <div class="fixtures fixtures--live">${fixtures.map(renderFixtureCard).join('')}</div>
+      <div class="fixtures fixtures--today">${fixtures.map(renderTodayFixture).join('')}</div>
     </section>
   `;
 }
@@ -1222,7 +1266,7 @@ function renderSourceNote() {
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
   const fanError = state.fanPortraitsError ? ` 球迷肖像同步暫時失敗：${state.fanPortraitsError}。` : '';
-  $('sourceNote').textContent = `資料更新：2026-06-17。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。影像優先使用足球球迷真實照片，沒有足球來源時可使用該國其他運動的成年女性球迷或觀眾真實照片；仍找不到時改用該國2026世足明星球員肖像，且卡片會清楚標示類型。完賽後會自動移回小組賽欄位並重算積分與預測校正。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
+  $('sourceNote').textContent = `資料更新：${todayDateKey()}。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。影像優先使用足球球迷真實照片，沒有足球來源時可使用該國其他運動的成年女性球迷或觀眾真實照片；仍找不到時改用該國2026世足明星球員肖像，且卡片會清楚標示類型。今日賽程顯示即時/完賽資訊，主體賽程卡固定保留分數預測。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
 }
 
 function render() {
