@@ -1152,12 +1152,19 @@ function renderGroups() {
 }
 
 function todayDateKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return formatTaipeiDateTime(new Date()).slice(0, 10);
 }
+
+const FIXTURE_SOURCE_OFFSET = '-04:00';
+const TAIPEI_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Taipei',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23'
+});
 
 function formatTime24(rawTime) {
   const source = String(rawTime || '').trim();
@@ -1180,20 +1187,41 @@ function formatTime24(rawTime) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
-function formatFixtureDateTime(dateText) {
+function formatTaipeiDateTime(date) {
+  const parts = Object.fromEntries(
+    TAIPEI_DATE_TIME_FORMATTER
+      .formatToParts(date)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+function fixtureDisplayDateTime(dateText) {
   const source = String(dateText || '');
   const match = source.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(.+))?$/);
-  if (!match) return source;
-  return match[2] ? `${match[1]} ${formatTime24(match[2])}` : match[1];
+  if (!match) return { dateTime: source, date: source.slice(0, 10), time: '' };
+  if (!match[2]) return { dateTime: match[1], date: match[1], time: '' };
+
+  const sourceTime = formatTime24(match[2]);
+  const taipeiDateTime = formatTaipeiDateTime(new Date(`${match[1]}T${sourceTime}:00${FIXTURE_SOURCE_OFFSET}`));
+  return {
+    dateTime: taipeiDateTime,
+    date: taipeiDateTime.slice(0, 10),
+    time: taipeiDateTime.slice(11, 16)
+  };
+}
+
+function formatFixtureDateTime(dateText) {
+  return fixtureDisplayDateTime(dateText).dateTime;
 }
 
 function fixtureDateKey(fixture) {
-  return String(fixture.date).slice(0, 10);
+  return fixtureDisplayDateTime(fixture.date).date;
 }
 
 function fixtureTimeLabel(fixture) {
-  const match = String(fixture.date).match(/^\d{4}-\d{2}-\d{2}\s+(.+)$/);
-  return match ? formatTime24(match[1]) : '時間待定';
+  return fixtureDisplayDateTime(fixture.date).time || '時間待定';
 }
 
 function renderTodayMatchStatus(fixture) {
@@ -1231,7 +1259,7 @@ function renderTodaySchedule() {
   const today = todayDateKey();
   const fixtures = allFixtures()
     .filter((fixture) => fixtureDateKey(fixture) === today)
-    .sort((a, b) => Number(isLiveFixture(b)) - Number(isLiveFixture(a)) || String(a.date).localeCompare(String(b.date)));
+    .sort((a, b) => Number(isLiveFixture(b)) - Number(isLiveFixture(a)) || formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date)));
   if (!fixtures.length) return '';
   return `
     <section class="today-section">
