@@ -540,13 +540,17 @@ function teamGroupName(code) {
   return group?.name || '';
 }
 
+function groupTeamNames(group) {
+  return group.standings.map(([code]) => `${team(code).flag} ${team(code).name}`).join('、');
+}
+
 function navigationItems() {
   const groupItems = GROUPS.map((group) => ({
     type: 'group',
     label: group.name,
-    meta: '小組積分與賽程',
+    meta: groupTeamNames(group),
     target: groupAnchor(group),
-    tokens: `${group.name} ${group.id}組 group ${group.id}`,
+    tokens: `${group.name} ${group.id}組 group ${group.id} ${groupTeamNames(group)}`,
   }));
   const teamItems = Object.keys(TEAM).map((code) => ({
     type: 'team',
@@ -582,11 +586,9 @@ function jumpToTarget(targetId) {
 }
 
 function renderJumpControls() {
-  const groupSelect = $('groupJump');
   const teamSelect = $('teamJump');
-  if (!groupSelect || !teamSelect) return;
+  if (!teamSelect) return;
 
-  groupSelect.innerHTML = '<option value="">選擇組別</option>' + GROUPS.map((group) => `<option value="${groupAnchor(group)}">${group.name}</option>`).join('');
   teamSelect.innerHTML = '<option value="">選擇國家</option>' + Object.keys(TEAM)
     .sort((a, b) => team(a).name.localeCompare(team(b).name, 'zh-Hant'))
     .map((code) => `<option value="${teamAnchor(code)}">${team(code).flag} ${team(code).name}｜${teamGroupName(code)}</option>`)
@@ -603,12 +605,13 @@ function renderJumpResults(query) {
       .filter((item) => normalizeTaiwanName(`${item.label} ${item.meta} ${item.tokens}`).toLowerCase().includes(normalized))
       .slice(0, 10)
     : GROUPS.map((group) => ({
+      type: 'group',
       label: group.name,
-      meta: '小組積分與賽程',
+      meta: groupTeamNames(group),
       target: groupAnchor(group),
     }));
   container.innerHTML = items.map((item) => `
-    <button type="button" class="jump-chip" data-jump-target="${item.target}">
+    <button type="button" class="jump-chip ${item.type === 'group' ? 'jump-chip--group' : ''}" data-jump-target="${item.target}">
       <strong>${item.label}</strong>
       <span>${item.meta}</span>
     </button>
@@ -1298,11 +1301,6 @@ $('jumpSearch').addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return;
   const first = document.querySelector('.jump-chip[data-jump-target]');
   if (first) jumpToTarget(first.dataset.jumpTarget);
-});
-
-$('groupJump').addEventListener('change', (event) => {
-  jumpToTarget(event.target.value);
-  event.target.value = '';
 });
 
 $('teamJump').addEventListener('change', (event) => {

@@ -137,7 +137,7 @@ button.tab {
 
 .jump-panel__selects {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -175,6 +175,15 @@ button.tab {
   color: var(--muted);
   font-size: 12px;
   font-weight: 750;
+}
+
+.jump-chip--group {
+  max-width: 330px;
+}
+
+.jump-chip--group span {
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .jump-chip:hover {
