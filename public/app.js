@@ -527,9 +527,9 @@ function predictMatch(homeCode, awayCode) {
 }
 
 function renderTabs() {
-  const tabs = [{ id: 'groups', label: '第一輪' }, ...KNOCKOUT_TABS];
+  const tabs = [{ id: 'groups', label: '第一輪' }, { id: 'schedule', label: '所有賽程' }, ...KNOCKOUT_TABS];
   $('tabs').innerHTML = tabs.map((tab) => `
-    <button class="tab ${state.activeTab === tab.id ? 'active' : ''} ${tab.id === 'groups' ? '' : 'muted-tab'}" data-tab="${tab.id}">
+    <button class="tab ${state.activeTab === tab.id ? 'active' : ''} ${KNOCKOUT_TABS.some((item) => item.id === tab.id) ? 'muted-tab' : ''}" data-tab="${tab.id}">
       ${tab.label}
     </button>
   `).join('');
@@ -1275,6 +1275,47 @@ function renderTodaySchedule() {
   `;
 }
 
+function fixtureStatusLabel(fixture) {
+  if (fixture.status === '完賽' && hasScore(fixture)) return `完賽 ${fixture.homeScore}-${fixture.awayScore}`;
+  if (isLiveFixture(fixture) && hasScore(fixture)) return `進行中 ${fixture.homeScore}-${fixture.awayScore}`;
+  return fixture.status;
+}
+
+function renderFullSchedule() {
+  const rows = allFixtures()
+    .sort((a, b) => formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date)) || a.group.localeCompare(b.group, 'zh-Hant'))
+    .map((fixture, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${fixture.group}</td>
+        <td>${teamLabel(fixture.home)} <span class="muted">對</span> ${teamLabel(fixture.away)}</td>
+        <td>${formatFixtureDateTime(fixture.date)}</td>
+        <td>${fixture.venue}</td>
+        <td><span class="source-pill">${fixtureStatusLabel(fixture)}</span></td>
+      </tr>
+    `).join('');
+
+  $('content').innerHTML = `
+    <section class="group-section">
+      <div class="group-header">
+        <div>
+          <p class="eyebrow">完整賽程</p>
+          <h2>所有賽程表</h2>
+        </div>
+        <p>以下時間皆為台灣時間，採 24 小時制。</p>
+      </div>
+      <div class="schedule-table-wrap">
+        <table class="standings-table schedule-table">
+          <thead>
+            <tr><th>#</th><th>組別</th><th>對戰組合</th><th>時間</th><th>場地</th><th>狀態</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderRegressionPanel() {
   const regressionModel = buildRegressionModel();
   const confidence = pct(regressionModel.credibility);
@@ -1339,6 +1380,7 @@ function render() {
   renderJumpControls();
   renderSourceNote();
   if (state.activeTab === 'groups') renderGroups();
+  else if (state.activeTab === 'schedule') renderFullSchedule();
   else renderEmptyKnockout(state.activeTab);
 }
 

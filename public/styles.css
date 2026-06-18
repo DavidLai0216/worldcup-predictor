@@ -316,6 +316,14 @@ button.tab {
   border-radius: 8px;
 }
 
+.schedule-table-wrap {
+  overflow-x: auto;
+}
+
+.schedule-table {
+  min-width: 760px;
+}
+
 th, td {
   text-align: left;
   border-bottom: 1px solid var(--line);
