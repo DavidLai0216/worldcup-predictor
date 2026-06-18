@@ -562,9 +562,9 @@ function navigationItems() {
   const fixtureItems = allFixtures().map((fixture) => ({
     type: 'fixture',
     label: `${team(fixture.home).name} vs ${team(fixture.away).name}`,
-    meta: `${fixture.group}｜${fixture.date}｜${fixture.venue}`,
+    meta: `${fixture.group}｜${formatFixtureDateTime(fixture.date)}｜${fixture.venue}`,
     target: fixtureAnchor(fixture),
-    tokens: `${fixture.home} ${fixture.away} ${team(fixture.home).name} ${team(fixture.away).name} ${fixture.group} ${fixture.date} ${fixture.venue} ${fixture.status}`,
+    tokens: `${fixture.home} ${fixture.away} ${team(fixture.home).name} ${team(fixture.away).name} ${fixture.group} ${fixture.date} ${formatFixtureDateTime(fixture.date)} ${fixture.venue} ${fixture.status}`,
   }));
   return [...groupItems, ...teamItems, ...fixtureItems];
 }
@@ -855,7 +855,7 @@ function buildOverrideFromEspnEvent(event, fixture, summary) {
       minute,
       source: 'ESPN 即時比分',
       sourceUrl: sourceLink,
-      updatedAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      updatedAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' }),
       note: completed ? 'ESPN 已標記本場完賽，今日賽程顯示最終比數。' : 'ESPN 即時資料更新中；主體賽程卡仍保留賽前預測。',
     },
   };
@@ -1014,7 +1014,7 @@ function renderOddsChoices(market, fixture) {
 function renderTaiwanOdds(fixture) {
   const odds = state.taiwanOdds.get(fixtureKey(fixture.home, fixture.away));
   const updated = state.taiwanOddsUpdatedAt
-    ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+    ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })
     : '讀取中';
   if (!odds) {
     const message = state.taiwanOddsError ? `讀取失敗：${state.taiwanOddsError}` : '待台灣運彩開盤或資料同步';
@@ -1123,7 +1123,7 @@ function renderFixtureCard(fixture) {
       ${teamAnchorMarker(fixture)}
       <div class="fixture-card__top">
         <div>
-          <p class="eyebrow">${fixture.group}｜${fixture.date}</p>
+          <p class="eyebrow">${fixture.group}｜${formatFixtureDateTime(fixture.date)}</p>
           <h3><span class="team-name">${teamLabel(fixture.home)}</span><em>對</em><span class="team-name">${teamLabel(fixture.away)}</span></h3>
           <p class="muted">${fixture.venue}</p>
         </div>
@@ -1159,13 +1159,41 @@ function todayDateKey() {
   return `${year}-${month}-${day}`;
 }
 
+function formatTime24(rawTime) {
+  const source = String(rawTime || '').trim();
+  if (!source) return '';
+  const period = source.match(/凌晨|清晨|早上|上午|中午|下午|晚上|晚間|AM|PM/i)?.[0]?.toLowerCase() || '';
+  const normalized = source.replace(/[點时時]/g, ':00');
+  const match = normalized.match(/(\d{1,2})(?:[:：](\d{1,2}))?/);
+  if (!match) return source;
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  if (period === 'pm' || period === '下午' || period === '晚上' || period === '晚間') {
+    if (hour < 12) hour += 12;
+  } else if (period === 'am' || period === '凌晨' || period === '清晨' || period === '早上' || period === '上午') {
+    if (hour === 12) hour = 0;
+  } else if (period === '中午') {
+    if (hour === 12) hour = 12;
+  }
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function formatFixtureDateTime(dateText) {
+  const source = String(dateText || '');
+  const match = source.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(.+))?$/);
+  if (!match) return source;
+  return match[2] ? `${match[1]} ${formatTime24(match[2])}` : match[1];
+}
+
 function fixtureDateKey(fixture) {
   return String(fixture.date).slice(0, 10);
 }
 
 function fixtureTimeLabel(fixture) {
-  const time = String(fixture.date).match(/\d{2}:\d{2}/)?.[0];
-  return time || '時間待定';
+  const match = String(fixture.date).match(/^\d{4}-\d{2}-\d{2}\s+(.+)$/);
+  return match ? formatTime24(match[1]) : '時間待定';
 }
 
 function renderTodayMatchStatus(fixture) {
@@ -1264,13 +1292,13 @@ function renderEmptyKnockout(tabId) {
 
 function renderSourceNote() {
   const liveStatus = state.lastLiveUpdate
-    ? `即時比分最近同步：${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}。`
+    ? `即時比分最近同步：${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' })}。`
     : '即時比分同步中。';
   const oddsStatus = state.taiwanOddsUpdatedAt
-    ? `台灣運彩賠率最近同步：${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}。`
+    ? `台灣運彩賠率最近同步：${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}。`
     : '台灣運彩賠率同步中。';
   const fanStatus = state.fanPortraitsUpdatedAt
-    ? `球迷肖像最近同步：${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}。`
+    ? `球迷肖像最近同步：${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}。`
     : '球迷肖像同步中。';
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
