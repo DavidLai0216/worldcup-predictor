@@ -1,23 +1,27 @@
 :root {
   color-scheme: light;
-  --bg: #f4f6f9;
+  --bg: #edf1ef;
   --panel: #ffffff;
-  --ink: #182033;
-  --muted: #667085;
-  --line: #d7deea;
-  --accent: #17685b;
-  --accent-soft: #e8f5f2;
-  --amber: #a15c08;
-  --amber-soft: #fff4e5;
-  --disabled: #eef1f5;
-  --shadow: 0 10px 26px rgba(24, 32, 51, 0.08);
+  --ink: #111827;
+  --muted: #66707f;
+  --line: #d9e1df;
+  --accent: #0f6f61;
+  --accent-soft: #e4f4ef;
+  --board: #101c2d;
+  --board-2: #16273c;
+  --gold: #bc8a1f;
+  --gold-soft: #fff6df;
+  --amber: #bc8a1f;
+  --red: #b73535;
+  --disabled: #e7ebef;
+  --shadow: 0 14px 32px rgba(16, 28, 45, 0.10);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
   background: var(--bg);
   color: var(--ink);
 }
@@ -25,19 +29,27 @@ body {
 h1, h2, h3, h4, p { margin-top: 0; }
 
 .topbar {
-  padding: 34px min(5vw, 64px) 18px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
+  padding: 36px min(5vw, 64px) 24px;
+  background:
+    linear-gradient(90deg, rgba(188, 138, 31, 0.16) 0 1px, transparent 1px 76px),
+    linear-gradient(180deg, var(--board), var(--board-2));
+  border-bottom: 4px solid var(--gold);
+  color: #ffffff;
+}
+
+.topbar .eyebrow {
+  color: #f0c967;
 }
 
 h1 {
   font-size: clamp(30px, 4vw, 52px);
   line-height: 1.05;
   margin-bottom: 12px;
+  letter-spacing: 0;
 }
 
 .subhead {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.76);
   font-size: 16px;
   line-height: 1.65;
   max-width: 900px;
@@ -61,7 +73,7 @@ main {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px;
   box-shadow: var(--shadow);
   margin-bottom: 16px;
 }
@@ -74,19 +86,19 @@ main {
 
 button.tab {
   border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 10px 14px;
+  border-radius: 8px;
+  padding: 10px 13px;
   font: inherit;
   font-weight: 850;
   cursor: pointer;
-  background: #ffffff;
+  background: #f7faf9;
   color: var(--ink);
 }
 
 .tab.active {
-  background: var(--accent);
+  background: var(--board);
   color: #ffffff;
-  border-color: var(--accent);
+  border-color: var(--board);
 }
 
 .tab.muted-tab {
@@ -214,6 +226,38 @@ button.tab {
   font-size: 13px;
 }
 
+.home-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(340px, 0.82fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.fan-panel,
+.bettor-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.panel-heading {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.panel-heading h2 {
+  margin-bottom: 6px;
+  font-size: 24px;
+}
+
+.panel-heading p:last-child {
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
 .group-section {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -224,12 +268,12 @@ button.tab {
 }
 
 .today-section {
-  background: #fffaf0;
-  border: 1px solid #f0d2a3;
+  background: #ffffff;
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 18px;
   box-shadow: var(--shadow);
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .regression-panel {
@@ -237,7 +281,7 @@ button.tab {
   grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr);
   gap: 16px;
   align-items: center;
-  background: #0f2f2b;
+  background: var(--board);
   color: #ffffff;
   border-radius: 8px;
   padding: 18px;
@@ -378,10 +422,22 @@ td {
   background: #ffffff;
 }
 
+.fixture-card--compact {
+  padding: 12px;
+}
+
+.fixture-card--compact .fixture-card__top {
+  margin-bottom: 10px;
+}
+
+.fixture-card--compact .scoreline {
+  font-size: 34px;
+}
+
 .fixture-card--live {
-  border-color: #df9d47;
-  background: #fffdf8;
-  box-shadow: inset 4px 0 0 var(--amber);
+  border-color: var(--gold);
+  background: #fffdf7;
+  box-shadow: inset 4px 0 0 var(--gold);
 }
 
 .fixtures--today {
@@ -425,9 +481,85 @@ td {
   padding: 7px 10px;
   font-size: 12px;
   font-weight: 850;
-  background: var(--amber-soft);
-  color: var(--amber);
-  border: 1px solid #f0d2a3;
+  background: var(--gold-soft);
+  color: #76510b;
+  border: 1px solid #ecd18d;
+}
+
+.bettor-panel {
+  position: sticky;
+  top: 14px;
+}
+
+.bettor-panel .panel-heading {
+  background: var(--board);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.bettor-panel .panel-heading .eyebrow {
+  color: #f0c967;
+}
+
+.bettor-panel .panel-heading p:last-child {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.odds-board {
+  display: grid;
+  gap: 10px;
+}
+
+.odds-board-card {
+  display: grid;
+  gap: 9px;
+  border: 1px solid #e2cf99;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fffaf0;
+  box-shadow: 0 8px 20px rgba(188, 138, 31, 0.10);
+}
+
+.odds-board-card h3 {
+  margin-bottom: 0;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.odds-board-card h3 span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.market-mini {
+  display: grid;
+  grid-template-columns: 64px repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  align-items: stretch;
+}
+
+.market-mini span,
+.market-mini b {
+  display: grid;
+  align-items: center;
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 7px;
+}
+
+.market-mini span {
+  color: #76510b;
+  background: #f4e7bd;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.market-mini b {
+  background: #ffffff;
+  border: 1px solid #ead8a4;
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .fan-strip {
@@ -707,6 +839,14 @@ footer {
 }
 
 @media (max-width: 900px) {
+  .home-command {
+    grid-template-columns: 1fr;
+  }
+
+  .bettor-panel {
+    position: static;
+  }
+
   .group-header,
   .fixture-card__top {
     display: block;
@@ -750,5 +890,14 @@ footer {
 
   .odds-choice-grid {
     grid-template-columns: 1fr;
+  }
+
+  .market-mini {
+    grid-template-columns: 1fr;
+  }
+
+  .market-mini span,
+  .market-mini b {
+    min-height: 36px;
   }
 }

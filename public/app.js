@@ -528,9 +528,9 @@ function predictMatch(homeCode, awayCode) {
 
 function renderTabs() {
   const tabs = [
-    { id: 'home', label: '首頁' },
-    { id: 'groups', label: '各組資訊' },
-    { id: 'schedule', label: '所有賽程' },
+    { id: 'home', label: '今日看板' },
+    { id: 'groups', label: '賠率預測' },
+    { id: 'schedule', label: '完整賽程' },
     ...KNOCKOUT_TABS
   ];
   $('tabs').innerHTML = tabs.map((tab) => `
@@ -1156,6 +1156,10 @@ function renderGroups() {
   }).join('')}`;
 }
 
+function fixtureSort(a, b) {
+  return Number(isLiveFixture(b)) - Number(isLiveFixture(a)) || formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date));
+}
+
 function todayDateKey() {
   return formatTaipeiDateTime(new Date()).slice(0, 10);
 }
@@ -1248,10 +1252,11 @@ function renderTodayMatchStatus(fixture) {
   return `<div class="scoreline">${best.homeGoals}-${best.awayGoals}</div><p class="small-text">${fixtureTimeLabel(fixture)}｜賽前預測最高比分</p>`;
 }
 
-function renderTodayFixture(fixture) {
+function renderTodayFixture(fixture, options = {}) {
+  const { compact = false } = options;
   const displayTime = fixtureDisplayDateTime(fixture.date);
   return `
-    <article class="fixture-card today-fixture ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
+    <article class="fixture-card today-fixture ${compact ? 'fixture-card--compact' : ''} ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
       <div class="fixture-card__top">
         <div>
           <p class="eyebrow">${fixture.group}｜台灣時間 ${displayTime.date} ${displayTime.time || '時間待定'}｜${fixture.venue}</p>
@@ -1266,12 +1271,12 @@ function renderTodayFixture(fixture) {
 }
 
 function renderDateSchedule(dateKey, options = {}) {
-  const { eyebrow = '賽程', title = dateKey, description = '', emptyText = '目前沒有排定賽事' } = options;
+  const { eyebrow = '賽程', title = dateKey, description = '', emptyText = '目前沒有排定賽事', compact = false } = options;
   const fixtures = allFixtures()
     .filter((fixture) => fixtureDateKey(fixture) === dateKey)
-    .sort((a, b) => Number(isLiveFixture(b)) - Number(isLiveFixture(a)) || formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date)));
+    .sort(fixtureSort);
   const body = fixtures.length
-    ? `<div class="fixtures fixtures--today">${fixtures.map(renderTodayFixture).join('')}</div>`
+    ? `<div class="fixtures fixtures--today">${fixtures.map((fixture) => renderTodayFixture(fixture, { compact })).join('')}</div>`
     : `<p class="empty-slot">${emptyText}</p>`;
   return `
     <section class="today-section">
@@ -1287,22 +1292,98 @@ function renderDateSchedule(dateKey, options = {}) {
   `;
 }
 
+function fixtureOddsSummary(fixture) {
+  const odds = state.taiwanOdds.get(fixtureKey(fixture.home, fixture.away));
+  if (!odds) return null;
+  const moneyline = orderedTaiwanChoices(odds.moneyline, fixture);
+  const handicap = orderedTaiwanChoices(odds.handicap, fixture);
+  return { odds, moneyline, handicap };
+}
+
+function renderOddsMiniRow(label, choices) {
+  if (!choices?.length) return `<p class="small-text">${label}：目前未開</p>`;
+  return `
+    <div class="market-mini">
+      <span>${label}</span>
+      ${choices.map((choice) => `<b>${choice.name} ${choice.odds.toFixed(2)}</b>`).join('')}
+    </div>
+  `;
+}
+
+function renderBettingOverview(fixtures) {
+  const updated = state.taiwanOddsUpdatedAt
+    ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })
+    : '同步中';
+  const cards = fixtures.slice(0, 6).map((fixture) => {
+    const displayTime = fixtureDisplayDateTime(fixture.date);
+    const oddsSummary = fixtureOddsSummary(fixture);
+    const prediction = predictMatch(fixture.home, fixture.away);
+    return `
+      <article class="odds-board-card">
+        <div>
+          <p class="eyebrow">${fixture.group}｜${displayTime.date} ${displayTime.time || '時間待定'}</p>
+          <h3>${team(fixture.home).flag} ${team(fixture.home).name} <span>vs</span> ${team(fixture.away).flag} ${team(fixture.away).name}</h3>
+        </div>
+        ${oddsSummary ? `
+          <p class="small-text">台灣運彩場次 ${oddsSummary.odds.gameNo}｜${updated}</p>
+          ${renderOddsMiniRow('不讓分', oddsSummary.moneyline)}
+          ${renderOddsMiniRow(oddsSummary.odds.handicap?.name || '讓分', oddsSummary.handicap)}
+        ` : `
+          <p class="small-text">${state.taiwanOddsError ? `台灣運彩讀取失敗：${state.taiwanOddsError}` : '台灣運彩待開盤，先顯示模型機率'}</p>
+          <div class="market-mini">
+            <span>模型</span>
+            <b>${team(fixture.home).name} ${pct(prediction.outcome.home)}</b>
+            <b>和 ${pct(prediction.outcome.draw)}</b>
+            <b>${team(fixture.away).name} ${pct(prediction.outcome.away)}</b>
+          </div>
+        `}
+      </article>
+    `;
+  }).join('');
+
+  return `
+    <aside class="bettor-panel" aria-label="賠率摘要">
+      <div class="panel-heading">
+        <p class="eyebrow">盤口摘要</p>
+        <h2>先看可下注資訊</h2>
+        <p>列出今日與明日賽事的台灣運彩盤口；未開盤時以模型勝平負機率補位。</p>
+      </div>
+      <div class="odds-board">${cards || '<p class="empty-slot">今日與明日目前沒有可顯示的盤口</p>'}</div>
+    </aside>
+  `;
+}
+
 function renderHome() {
   const today = todayDateKey();
   const tomorrow = tomorrowDateKey();
+  const homeFixtures = allFixtures()
+    .filter((fixture) => [today, tomorrow].includes(fixtureDateKey(fixture)))
+    .sort(fixtureSort);
   $('content').innerHTML = `
-    ${renderDateSchedule(today, {
-      eyebrow: '今日賽程',
-      title: `${today} 賽事狀態`,
-      description: '進行中比賽顯示即時動態；完賽顯示最終比數與摘要。',
-      emptyText: '今日目前沒有排定賽事'
-    })}
-    ${renderDateSchedule(tomorrow, {
-      eyebrow: '明日賽程',
-      title: `${tomorrow} 即將舉辦`,
-      description: '以下時間皆為台灣時間，採 24 小時制。',
-      emptyText: '明日目前沒有排定賽事'
-    })}
+    <section class="home-command">
+      <div class="fan-panel">
+        <div class="panel-heading">
+          <p class="eyebrow">球迷入口</p>
+          <h2>比分、摘要、下一場</h2>
+          <p>首頁只放最需要立刻知道的賽事狀態；完整分組與模型請切到上方分頁。</p>
+        </div>
+        ${renderDateSchedule(today, {
+          eyebrow: '今日賽程',
+          title: `${today} 賽事狀態`,
+          description: '進行中比賽顯示即時動態；完賽顯示最終比數與摘要。',
+          emptyText: '今日目前沒有排定賽事',
+          compact: true
+        })}
+        ${renderDateSchedule(tomorrow, {
+          eyebrow: '明日賽程',
+          title: `${tomorrow} 即將舉辦`,
+          description: '以下時間皆為台灣時間，採 24 小時制。',
+          emptyText: '明日目前沒有排定賽事',
+          compact: true
+        })}
+      </div>
+      ${renderBettingOverview(homeFixtures)}
+    </section>
   `;
 }
 
@@ -1410,7 +1491,7 @@ function renderSourceNote() {
   const error = state.liveError ? ` ESPN 同步暫時失敗：${state.liveError}。` : '';
   const oddsError = state.taiwanOddsError ? ` 台灣運彩同步暫時失敗：${state.taiwanOddsError}。` : '';
   const fanError = state.fanPortraitsError ? ` 球迷肖像同步暫時失敗：${state.fanPortraitsError}。` : '';
-  $('sourceNote').textContent = `資料更新：${todayDateKey()}。首頁顯示今日與明日賽程；各組積分、完整預測卡與模型校正集中在「各組資訊」。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。影像優先使用足球球迷真實照片，沒有足球來源時可使用該國其他運動的成年女性球迷或觀眾真實照片；仍找不到時改用該國2026世足明星球員肖像，且卡片會清楚標示類型。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
+  $('sourceNote').textContent = `資料更新：${todayDateKey()}。今日看板服務兩種使用者：球迷看比分與摘要，投注者看盤口與模型；完整賽程、賠率預測與各組積分集中在分頁。進行中與完賽狀態每 ${LIVE_REFRESH_MS / 1000} 秒向 ESPN 即時比分同步；台灣運彩欄位讀取站內同步檔，來源為官方世界盃賽事資料。${liveStatus}${oddsStatus}${fanStatus}${error}${oddsError}${fanError}`;
 }
 
 function render() {
