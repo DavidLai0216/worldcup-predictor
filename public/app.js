@@ -1360,10 +1360,6 @@ function renderHome() {
   $('content').innerHTML = `
     <section class="home-command">
       <div class="fan-panel">
-        <div class="panel-heading">
-          <p class="eyebrow">比分與賽程</p>
-          <h2>比分、摘要、下一場</h2>
-        </div>
         ${renderDateSchedule(today, {
           eyebrow: '今日賽程',
           title: `${today} 賽事狀態`,
