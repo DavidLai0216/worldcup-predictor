@@ -1258,7 +1258,7 @@ function renderTodayFixture(fixture, options = {}) {
     <article class="fixture-card today-fixture ${compact ? 'fixture-card--compact' : ''} ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
       <div class="fixture-card__top">
         <div>
-          <p class="eyebrow">${fixture.group}｜台灣時間 ${displayTime.date} ${displayTime.time || '時間待定'}｜${fixture.venue}</p>
+          <p class="eyebrow">${fixture.group}｜${displayTime.date} ${displayTime.time || '時間待定'}｜${fixture.venue}</p>
           <h3><span class="team-name">${teamLabel(fixture.home)}</span><em>對</em><span class="team-name">${teamLabel(fixture.away)}</span></h3>
         </div>
         <span class="source-pill">${fixture.status}</span>
@@ -1403,7 +1403,7 @@ function renderFullSchedule() {
           <td>${displayTime.time || '時間待定'}</td>
           <td>
             <div class="schedule-matchup">${teamLabel(fixture.home)} <span class="muted">對</span> ${teamLabel(fixture.away)}</div>
-            <div class="schedule-time-note">台灣時間 ${displayTime.date} ${displayTime.time || '時間待定'}</div>
+            <div class="schedule-time-note">${displayTime.date} ${displayTime.time || '時間待定'}</div>
           </td>
           <td>${fixture.venue}</td>
           <td><span class="source-pill">${fixtureStatusLabel(fixture)}</span></td>
@@ -1422,7 +1422,7 @@ function renderFullSchedule() {
       <div class="schedule-table-wrap">
         <table class="standings-table schedule-table">
           <thead>
-            <tr><th>#</th><th>組別</th><th>台灣日期</th><th>台灣時間</th><th>對戰組合</th><th>場地</th><th>狀態</th></tr>
+            <tr><th>#</th><th>組別</th><th>日期</th><th>時間</th><th>對戰組合</th><th>場地</th><th>狀態</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
