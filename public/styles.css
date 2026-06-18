@@ -324,6 +324,16 @@ button.tab {
   min-width: 860px;
 }
 
+.schedule-matchup {
+  margin-bottom: 4px;
+}
+
+.schedule-time-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 th, td {
   text-align: left;
   border-bottom: 1px solid var(--line);

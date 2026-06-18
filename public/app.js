@@ -1290,9 +1290,12 @@ function renderFullSchedule() {
         <tr>
           <td>${index + 1}</td>
           <td>${fixture.group}</td>
-          <td>${teamLabel(fixture.home)} <span class="muted">對</span> ${teamLabel(fixture.away)}</td>
           <td>${displayTime.date}</td>
           <td>${displayTime.time || '時間待定'}</td>
+          <td>
+            <div class="schedule-matchup">${teamLabel(fixture.home)} <span class="muted">對</span> ${teamLabel(fixture.away)}</div>
+            <div class="schedule-time-note">台灣時間 ${displayTime.date} ${displayTime.time || '時間待定'}</div>
+          </td>
           <td>${fixture.venue}</td>
           <td><span class="source-pill">${fixtureStatusLabel(fixture)}</span></td>
         </tr>
@@ -1311,7 +1314,7 @@ function renderFullSchedule() {
       <div class="schedule-table-wrap">
         <table class="standings-table schedule-table">
           <thead>
-            <tr><th>#</th><th>組別</th><th>對戰組合</th><th>台灣日期</th><th>台灣時間</th><th>場地</th><th>狀態</th></tr>
+            <tr><th>#</th><th>組別</th><th>台灣日期</th><th>台灣時間</th><th>對戰組合</th><th>場地</th><th>狀態</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
