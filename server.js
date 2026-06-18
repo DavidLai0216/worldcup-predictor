@@ -267,7 +267,10 @@ async function serveStatic(req, res, url) {
 
   fs.readFile(filePath, (error, data) => {
     if (error) return textResponse(res, 404, 'Not found');
-    res.writeHead(200, { 'Content-Type': contentTypeFor(filePath) });
+    res.writeHead(200, {
+      'Content-Type': contentTypeFor(filePath),
+      'Cache-Control': 'no-store',
+    });
     res.end(data);
   });
 }
