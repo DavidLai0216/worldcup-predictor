@@ -598,9 +598,15 @@ function renderJumpResults(query) {
   const container = $('jumpResults');
   if (!container) return;
   const normalized = normalizeTaiwanName(query).toLowerCase();
-  const items = navigationItems()
-    .filter((item) => !normalized || normalizeTaiwanName(`${item.label} ${item.meta} ${item.tokens}`).toLowerCase().includes(normalized))
-    .slice(0, normalized ? 10 : 8);
+  const items = normalized
+    ? navigationItems()
+      .filter((item) => normalizeTaiwanName(`${item.label} ${item.meta} ${item.tokens}`).toLowerCase().includes(normalized))
+      .slice(0, 10)
+    : GROUPS.map((group) => ({
+      label: group.name,
+      meta: '小組積分與賽程',
+      target: groupAnchor(group),
+    }));
   container.innerHTML = items.map((item) => `
     <button type="button" class="jump-chip" data-jump-target="${item.target}">
       <strong>${item.label}</strong>
