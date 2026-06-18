@@ -349,6 +349,9 @@ const FAN_PORTRAITS_URL = 'data/fan-portraits.json';
 const state = {
   activeTab: 'home',
   homeFilter: 'all',
+  expandedFixtures: new Set(),
+  fixturePanels: new Map(),
+  discussionOpen: false,
   liveOverrides: new Map(),
   taiwanOdds: new Map(),
   taiwanOddsUpdatedAt: null,
@@ -976,11 +979,50 @@ function renderSummary(fixture) {
   `;
 }
 
-function renderPrediction(fixture) {
+function fixturePanelKey(fixture) {
+  return fixture.id;
+}
+
+function isFixtureExpanded(fixture) {
+  return state.expandedFixtures.has(fixturePanelKey(fixture));
+}
+
+function activeFixturePanel(fixture) {
+  return state.fixturePanels.get(fixturePanelKey(fixture)) || 'model';
+}
+
+function edgeClass(edge) {
+  if (!edge) return '';
+  if (edge.edge >= 0.08) return 'signal-good';
+  if (edge.edge <= -0.08) return 'signal-risk';
+  return 'signal-watch';
+}
+
+function renderCoreModelSummary(fixture) {
+  const prediction = predictMatch(fixture.home, fixture.away);
+  const best = prediction.scores[0];
+  const edge = bestFixtureEdge(fixture);
+  return `
+    <div class="core-summary ${edgeClass(edge)}">
+      <div>
+        <p class="label">模型勝率</p>
+        <div class="core-score">${best.homeGoals}-${best.awayGoals}</div>
+        <small>最可能比分 ${pct(best.probability)}</small>
+      </div>
+      <div class="outcome-grid">
+        <span><b>${pct(prediction.outcome.home)}</b><small>${team(fixture.home).name}勝</small></span>
+        <span><b>${pct(prediction.outcome.draw)}</b><small>平手</small></span>
+        <span><b>${pct(prediction.outcome.away)}</b><small>${team(fixture.away).name}勝</small></span>
+      </div>
+      ${edge ? `<p class="edge-note">盤口差異：${edge.choice.name} ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}</p>` : ''}
+    </div>
+  `;
+}
+
+function renderPredictionDetails(fixture) {
   const prediction = predictMatch(fixture.home, fixture.away);
   const best = prediction.scores[0];
   return `
-    ${renderMatchInsights(fixture)}
     <div class="prediction-summary">
       <div>
         <p class="label">最可能比分</p>
@@ -998,7 +1040,44 @@ function renderPrediction(fixture) {
       ${prediction.scores.map((score, index) => `<span class="${index === 0 ? 'best-pick' : ''}">${score.homeGoals}-${score.awayGoals} <b>${pct(score.probability)}</b></span>`).join('')}
     </div>
     <p class="small-text">模型預測｜校正後 λ：${prediction.lambdaHome.toFixed(2)} / ${prediction.lambdaAway.toFixed(2)}｜原始 λ：${prediction.rawLambdaHome.toFixed(2)} / ${prediction.rawLambdaAway.toFixed(2)}</p>
-    ${renderTaiwanOdds(fixture)}
+  `;
+}
+
+function renderMarketEdgesTable(fixture) {
+  const edges = fixtureMarketEdges(fixture);
+  if (!edges.length) return '<p class="small-text">盤口差異待更新</p>';
+  return `
+    <div class="edge-table">
+      ${edges.map((edge) => `
+        <span class="${edgeClass(edge)}">
+          <b>${edge.choice.name}</b>
+          <small>模型 ${pct(edge.modelProbability)}｜盤口 ${pct(edge.marketProbability)}｜差 ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}</small>
+        </span>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderFixturePanels(fixture) {
+  const active = activeFixturePanel(fixture);
+  const panels = {
+    model: renderPredictionDetails(fixture),
+    market: `${renderTaiwanOdds(fixture)}${renderMarketEdgesTable(fixture)}`,
+    insight: `${renderMatchInsights(fixture)}${renderFanPortraits(fixture)}${renderSummary(fixture)}`,
+  };
+  return `
+    <div class="fixture-panels">
+      <div class="fixture-panel-tabs" role="tablist" aria-label="單場資訊">
+        ${[
+    ['model', '預測模型'],
+    ['market', '即時盤口'],
+    ['insight', '戰情分析'],
+  ].map(([id, label]) => `
+          <button type="button" class="fixture-panel-tab ${active === id ? 'active' : ''}" data-fixture-panel="${id}" data-fixture-id="${fixturePanelKey(fixture)}">${label}</button>
+        `).join('')}
+      </div>
+      <div class="fixture-panel-body">${panels[active]}</div>
+    </div>
   `;
 }
 
@@ -1133,8 +1212,9 @@ function teamAnchorMarker(fixture) {
 }
 
 function renderFixtureCard(fixture) {
+  const expanded = isFixtureExpanded(fixture);
   return `
-    <article id="${fixtureAnchor(fixture)}" class="fixture-card ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}" data-home="${fixture.home}" data-away="${fixture.away}">
+    <article id="${fixtureAnchor(fixture)}" class="fixture-card ${expanded ? 'fixture-card--expanded' : ''} ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}" data-home="${fixture.home}" data-away="${fixture.away}">
       ${teamAnchorMarker(fixture)}
       <div class="fixture-card__top">
         <div>
@@ -1144,8 +1224,9 @@ function renderFixtureCard(fixture) {
         </div>
         <span class="source-pill">${fixture.status}</span>
       </div>
-      ${renderFanPortraits(fixture)}
-      ${renderPrediction(fixture)}
+      ${renderCoreModelSummary(fixture)}
+      <button type="button" class="expand-toggle" data-fixture-toggle="${fixturePanelKey(fixture)}">${expanded ? '收合資訊' : '展開分析'}</button>
+      ${expanded ? renderFixturePanels(fixture) : ''}
     </article>
   `;
 }
@@ -1264,8 +1345,9 @@ function renderTodayMatchStatus(fixture) {
 function renderTodayFixture(fixture, options = {}) {
   const { compact = false } = options;
   const displayTime = fixtureDisplayDateTime(fixture.date);
+  const expanded = isFixtureExpanded(fixture);
   return `
-    <article class="fixture-card today-fixture ${compact ? 'fixture-card--compact' : ''} ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
+    <article class="fixture-card today-fixture ${expanded ? 'fixture-card--expanded' : ''} ${compact ? 'fixture-card--compact' : ''} ${isLiveFixture(fixture) ? 'fixture-card--live' : ''}">
       <div class="fixture-card__top">
         <div>
           <p class="eyebrow">${fixture.group}｜${displayTime.date} ${displayTime.time || '時間待定'}｜${fixture.venue}</p>
@@ -1273,9 +1355,10 @@ function renderTodayFixture(fixture, options = {}) {
         </div>
         <span class="source-pill">${fixture.status}</span>
       </div>
-      ${renderMatchInsights(fixture)}
+      ${renderCoreModelSummary(fixture)}
       ${renderTodayMatchStatus(fixture)}
-      ${renderSummary(fixture)}
+      <button type="button" class="expand-toggle" data-fixture-toggle="${fixturePanelKey(fixture)}">${expanded ? '收合資訊' : '展開分析'}</button>
+      ${expanded ? renderFixturePanels(fixture) : ''}
     </article>
   `;
 }
@@ -1472,6 +1555,32 @@ function renderBettingOverview(fixtures) {
   `;
 }
 
+function renderDiscussionDock() {
+  return `
+    <aside class="discussion-dock ${state.discussionOpen ? 'open' : ''}" aria-label="市場討論">
+      <button type="button" class="discussion-toggle" data-discussion-toggle>
+        ${state.discussionOpen ? '關閉討論' : '市場討論'}
+      </button>
+      <div class="discussion-panel">
+        <h2>市場觀點</h2>
+        <p>留言功能待開放；目前先顯示模型與盤口的反差訊號。</p>
+        <div class="discussion-list">
+          ${allFixtures()
+    .map((fixture) => ({ fixture, edge: bestFixtureEdge(fixture) }))
+    .filter((item) => item.edge && Math.abs(item.edge.edge) >= 0.06)
+    .slice(0, 5)
+    .map(({ fixture, edge }) => `
+            <span class="${edgeClass(edge)}">
+              ${team(fixture.home).name} vs ${team(fixture.away).name}<br>
+              ${edge.choice.name} 差 ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}
+            </span>
+          `).join('') || '<span>目前沒有明顯反差訊號</span>'}
+        </div>
+      </div>
+    </aside>
+  `;
+}
+
 function renderHome() {
   const today = todayDateKey();
   const tomorrow = tomorrowDateKey();
@@ -1503,6 +1612,7 @@ function renderHome() {
       </div>
       ${renderBettingOverview(homeFixtures)}
     </section>
+    ${renderDiscussionDock()}
   `;
 }
 
@@ -1632,10 +1742,34 @@ $('tabs').addEventListener('click', (event) => {
 });
 
 $('content').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-home-filter]');
-  if (!button) return;
-  state.homeFilter = button.dataset.homeFilter;
-  render();
+  const filterButton = event.target.closest('[data-home-filter]');
+  if (filterButton) {
+    state.homeFilter = filterButton.dataset.homeFilter;
+    render();
+    return;
+  }
+
+  const toggleButton = event.target.closest('[data-fixture-toggle]');
+  if (toggleButton) {
+    const key = toggleButton.dataset.fixtureToggle;
+    if (state.expandedFixtures.has(key)) state.expandedFixtures.delete(key);
+    else state.expandedFixtures.add(key);
+    render();
+    return;
+  }
+
+  const panelButton = event.target.closest('[data-fixture-panel]');
+  if (panelButton) {
+    state.fixturePanels.set(panelButton.dataset.fixtureId, panelButton.dataset.fixturePanel);
+    render();
+    return;
+  }
+
+  const discussionButton = event.target.closest('[data-discussion-toggle]');
+  if (discussionButton) {
+    state.discussionOpen = !state.discussionOpen;
+    render();
+  }
 });
 
 $('jumpSearch').addEventListener('input', (event) => {

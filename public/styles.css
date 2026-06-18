@@ -479,6 +479,10 @@ td {
   background: #ffffff;
 }
 
+.fixture-card--expanded {
+  border-color: #b9c8c5;
+}
+
 .fixture-card--compact {
   padding: 12px;
 }
@@ -541,6 +545,112 @@ td {
   background: var(--gold-soft);
   color: #76510b;
   border: 1px solid #ecd18d;
+}
+
+.core-summary {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  gap: 10px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #f8fafc;
+}
+
+.core-summary.signal-good {
+  border-color: #35b773;
+  background: #effbf3;
+}
+
+.core-summary.signal-watch {
+  border-color: #e2cf99;
+  background: #fffaf0;
+}
+
+.core-summary.signal-risk {
+  border-color: #e7a6a6;
+  background: #fff5f5;
+}
+
+.core-score {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.expand-toggle {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+  color: var(--board);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.fixture-panels {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.fixture-panel-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fixture-panel-tab {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 6px;
+  background: #f8fafc;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.fixture-panel-tab.active {
+  background: var(--board);
+  border-color: var(--board);
+  color: #ffffff;
+}
+
+.edge-table {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.edge-table span {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px;
+  background: #f8fafc;
+}
+
+.signal-good {
+  border-color: #35b773 !important;
+  background: #effbf3 !important;
+}
+
+.signal-watch {
+  border-color: #e2cf99 !important;
+  background: #fffaf0 !important;
+}
+
+.signal-risk {
+  border-color: #e7a6a6 !important;
+  background: #fff5f5 !important;
 }
 
 .bettor-panel {
@@ -642,6 +752,72 @@ td {
   font-size: 12px;
   font-weight: 850;
   line-height: 1.35;
+}
+
+.discussion-dock {
+  position: fixed;
+  right: 0;
+  top: 170px;
+  z-index: 20;
+  width: 300px;
+  transform: translateX(calc(100% - 46px));
+  transition: transform 160ms ease;
+}
+
+.discussion-dock.open {
+  transform: translateX(0);
+}
+
+.discussion-toggle {
+  position: absolute;
+  left: -92px;
+  top: 0;
+  width: 92px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  padding: 10px 8px;
+  background: var(--board);
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.discussion-panel {
+  min-height: 260px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  padding: 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.discussion-panel h2 {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.discussion-panel p {
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.discussion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.discussion-list span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.4;
 }
 
 .fan-strip {
@@ -986,5 +1162,37 @@ footer {
   .market-mini span,
   .market-mini b {
     min-height: 36px;
+  }
+
+  .core-summary,
+  .fixture-panel-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .discussion-dock {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    transform: translateY(calc(100% - 44px));
+  }
+
+  .discussion-dock.open {
+    transform: translateY(0);
+  }
+
+  .discussion-toggle {
+    position: static;
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid var(--line);
+  }
+
+  .discussion-panel {
+    min-height: 220px;
+    max-height: 60vh;
+    overflow: auto;
+    border-radius: 0;
+    border: 1px solid var(--line);
   }
 }
