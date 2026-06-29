@@ -576,7 +576,7 @@ td {
 
 .core-summary {
   display: grid;
-  grid-template-columns: 112px minmax(170px, 0.9fr) minmax(260px, 1.1fr) minmax(220px, 0.9fr);
+  grid-template-columns: 112px minmax(180px, 0.9fr) minmax(280px, 1.1fr);
   gap: 8px;
   align-items: center;
   border: 1px solid var(--line);
@@ -603,8 +603,7 @@ td {
 
 .core-score-block,
 .fan-match-primary,
-.inline-model,
-.fan-betting-brief {
+.inline-model {
   min-height: 58px;
   border-radius: 8px;
   padding: 8px;
@@ -630,8 +629,7 @@ td {
 
 .core-score-block small,
 .inline-model small,
-.inline-odds small,
-.fan-betting-brief small {
+.inline-odds small {
   color: var(--muted);
   font-size: 11px;
   font-weight: 850;
@@ -702,24 +700,6 @@ td {
 .inline-odds b {
   font-size: 15px;
   font-weight: 950;
-}
-
-.fan-betting-brief {
-  display: grid;
-  gap: 6px;
-  background: #fffaf0;
-  border: 1px solid #ecd18d;
-}
-
-.fan-betting-brief > small {
-  color: #76510b;
-}
-
-.fan-betting-brief .inline-odds {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  min-height: 0;
 }
 
 .inline-odds__empty {
@@ -1293,35 +1273,14 @@ footer {
     grid-row: 2;
   }
 
-  .fan-betting-brief {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    min-height: 40px;
-  }
-
   .inline-model,
   .inline-odds {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .fan-betting-brief .inline-odds {
-    grid-template-columns: 1fr;
-  }
-
-  .fan-betting-brief .inline-odds span:not(.odds-favorite) {
-    display: none;
-  }
-
-  .fan-betting-brief .compact-edge {
-    display: none;
-  }
-
   .core-score-block,
   .fan-match-primary,
-  .inline-model,
-  .fan-betting-brief {
+  .inline-model {
     min-height: 48px;
     padding: 6px;
   }

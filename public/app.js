@@ -393,6 +393,7 @@ const FUTURE_KNOCKOUT_SLOTS = {
 };
 
 const LIVE_REFRESH_MS = 30000;
+const ODDS_STALE_MS = 6 * 60 * 60 * 1000;
 const ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 const TAIWAN_LOTTERY_WC_URL = 'data/taiwan-odds.json';
 const FAN_PORTRAITS_URL = 'data/fan-portraits.json';
@@ -580,14 +581,12 @@ function predictMatch(homeCode, awayCode) {
 }
 
 const HOME_FILTERS = [
-  { id: 'today', label: '今日' },
+  { id: 'today', label: '今日/明日' },
   { id: 'tomorrow', label: '明日' },
   { id: 'live', label: '進行中' },
   { id: 'done', label: '完賽' },
   { id: 'all', label: '全部' },
   { id: 'soon', label: '未賽' },
-  { id: 'edge', label: '投注訊號' },
-  { id: 'highOdds', label: '高賠率' },
   { id: 'strong', label: '焦點對戰' },
 ];
 
@@ -1074,6 +1073,7 @@ function fixtureScoreText(fixture, best) {
 }
 
 function renderInlineOdds(fixture) {
+  if (isTaiwanOddsStale()) return '<span class="inline-odds__empty">盤口待更新</span>';
   const oddsSummary = fixtureOddsSummary(fixture);
   if (!oddsSummary?.moneyline?.length) return '<span class="inline-odds__empty">賠率未開</span>';
   const lowest = Math.min(...oddsSummary.moneyline.map((choice) => choice.odds));
@@ -1113,10 +1113,9 @@ function renderFanMatchNote(fixture) {
 function renderCoreModelSummary(fixture) {
   const prediction = predictMatch(fixture.home, fixture.away);
   const best = prediction.scores[0];
-  const edge = bestFixtureEdge(fixture);
   const scoreText = fixtureScoreText(fixture, best);
   return `
-    <div class="core-summary fan-first-summary ${fixtureStatusKind(fixture)} ${edgeClass(edge)}">
+    <div class="core-summary fan-first-summary ${fixtureStatusKind(fixture)}">
       <div class="core-score-block">
         <small>${matchStateText(fixture)}</small>
         <b>${scoreText}</b>
@@ -1130,11 +1129,6 @@ function renderCoreModelSummary(fixture) {
         <span><b>${pct(prediction.outcome.home)}</b><small>${team(fixture.home).name}</small></span>
         <span><b>${pct(prediction.outcome.draw)}</b><small>和局</small></span>
         <span><b>${pct(prediction.outcome.away)}</b><small>${team(fixture.away).name}</small></span>
-      </div>
-      <div class="fan-betting-brief" aria-label="賠率與投注訊號">
-        <small>賠率</small>
-        <div class="inline-odds">${renderInlineOdds(fixture)}</div>
-        ${edge ? `<span class="compact-edge">${edge.choice.name} ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}</span>` : ''}
       </div>
     </div>
   `;
@@ -1165,6 +1159,7 @@ function renderPredictionDetails(fixture) {
 }
 
 function renderMarketEdgesTable(fixture) {
+  if (isTaiwanOddsStale()) return '<p class="small-text">盤口待更新，暫不計算模型差異。</p>';
   const edges = fixtureMarketEdges(fixture);
   if (!edges.length) return '<p class="small-text">盤口差異待更新</p>';
   return `
@@ -1191,7 +1186,7 @@ function renderFixturePanels(fixture) {
       <div class="fixture-panel-tabs" role="tablist" aria-label="單場資訊">
         ${[
     ['model', '預測模型'],
-    ['market', '即時盤口'],
+    ['market', '賠率'],
     ['insight', '戰情分析'],
   ].map(([id, label]) => `
           <button type="button" class="fixture-panel-tab ${active === id ? 'active' : ''}" data-fixture-panel="${id}" data-fixture-id="${fixturePanelKey(fixture)}">${label}</button>
@@ -1232,6 +1227,17 @@ function renderTaiwanOdds(fixture) {
   const updated = state.taiwanOddsUpdatedAt
     ? state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })
     : '更新中';
+  if (isTaiwanOddsStale()) {
+    return `
+      <div class="taiwan-odds taiwan-odds--stale">
+        <div class="taiwan-odds__header">
+          <strong>台灣運彩</strong>
+          <a href="https://www.sportslottery.com.tw/" target="_blank" rel="noreferrer">官方盤口</a>
+        </div>
+        <p class="small-text">盤口待更新。上一筆資料：${updated}，為避免誤導，不顯示過期賠率。</p>
+      </div>
+    `;
+  }
   if (!odds) {
     const message = state.taiwanOddsError ? `盤口暫時無法更新：${state.taiwanOddsError}` : '台灣運彩尚未開盤';
     return `
@@ -1376,10 +1382,25 @@ function fixtureEdgeMagnitude(fixture) {
   return Math.abs(bestFixtureEdge(fixture)?.edge || 0);
 }
 
+function homeStatusRank(fixture) {
+  const date = fixtureDateKey(fixture);
+  const today = todayDateKey();
+  const tomorrow = tomorrowDateKey();
+  if (isLiveFixture(fixture)) return 0;
+  if (date === today && fixture.status !== '完賽') return 1;
+  if (date === today && fixture.status === '完賽') return 2;
+  if (date === tomorrow) return 3;
+  return 4;
+}
+
 function homeFixtureSort(a, b) {
   if (state.homeFilter === 'edge') {
     return Number(isLiveFixture(b)) - Number(isLiveFixture(a))
       || fixtureEdgeMagnitude(b) - fixtureEdgeMagnitude(a)
+      || formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date));
+  }
+  if (state.homeFilter === 'today') {
+    return homeStatusRank(a) - homeStatusRank(b)
       || formatFixtureDateTime(a.date).localeCompare(formatFixtureDateTime(b.date));
   }
   return fixtureSort(a, b);
@@ -1531,11 +1552,17 @@ function renderDateSchedule(dateKey, options = {}) {
 }
 
 function fixtureOddsSummary(fixture) {
+  if (isTaiwanOddsStale()) return null;
   const odds = state.taiwanOdds.get(fixtureKey(fixture.home, fixture.away));
   if (!odds) return null;
   const moneyline = orderedTaiwanChoices(odds.moneyline, fixture);
   const handicap = orderedTaiwanChoices(odds.handicap, fixture);
   return { odds, moneyline, handicap };
+}
+
+function isTaiwanOddsStale() {
+  if (!state.taiwanOddsUpdatedAt) return true;
+  return Date.now() - state.taiwanOddsUpdatedAt.getTime() > ODDS_STALE_MS;
 }
 
 function outcomeProbabilityForChoice(choice, fixture, prediction) {
@@ -1587,13 +1614,11 @@ function isStrongMatchup(fixture) {
 }
 
 function homeFilterMatches(fixture) {
-  if (state.homeFilter === 'today') return fixtureDateKey(fixture) === todayDateKey();
+  if (state.homeFilter === 'today') return [todayDateKey(), tomorrowDateKey()].includes(fixtureDateKey(fixture));
   if (state.homeFilter === 'tomorrow') return fixtureDateKey(fixture) === tomorrowDateKey();
   if (state.homeFilter === 'live') return isLiveFixture(fixture);
   if (state.homeFilter === 'done') return fixture.status === '完賽';
   if (state.homeFilter === 'soon') return fixture.status !== '完賽';
-  if (state.homeFilter === 'edge') return Math.abs(bestFixtureEdge(fixture)?.edge || 0) >= 0.06;
-  if (state.homeFilter === 'highOdds') return hasHighOdds(fixture);
   if (state.homeFilter === 'strong') return isStrongMatchup(fixture);
   return true;
 }
@@ -1638,7 +1663,7 @@ function renderMatchInsights(fixture) {
   const bestScore = prediction.scores[0];
   const edgeText = edge
     ? `${edge.choice.name}：模型 ${pct(edge.modelProbability)} / 盤口 ${pct(edge.marketProbability)} / 差 ${edge.edge >= 0 ? '+' : ''}${pct(edge.edge)}`
-    : '盤口差異待更新';
+    : '盤口待更新';
   return `
     <div class="insight-strip">
       <span>${teamRecordText(fixture.home)}</span>
@@ -1872,7 +1897,7 @@ function renderSourceNote() {
     ? `比分更新 ${state.lastLiveUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23' })}`
     : '比分更新中';
   const oddsStatus = state.taiwanOddsUpdatedAt
-    ? `台灣運彩 ${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}`
+    ? `${isTaiwanOddsStale() ? '台灣運彩待更新' : '台灣運彩'} ${state.taiwanOddsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}`
     : '台灣運彩更新中';
   const fanStatus = state.fanPortraitsUpdatedAt
     ? `照片 ${state.fanPortraitsUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}`
