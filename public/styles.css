@@ -81,9 +81,10 @@ main {
 }
 
 .tabs {
-  display: none;
+  display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 button.tab {

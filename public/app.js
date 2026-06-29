@@ -342,6 +342,56 @@ const KNOCKOUT_TABS = [
   { id: 'final', label: '決賽', slots: 1 },
 ];
 
+const KNOCKOUT_STAGES = [
+  {
+    id: 'r32',
+    name: '32 強',
+    fixtures: [
+      ['2026-06-28T19:00Z', 'SoFi Stadium', 'RSA', 'CAN', '完賽', 0, 1, [['CAN', "90'+2", 'Stephen Eustáquio']], { espnId: '760486', source: 'ESPN', note: '加拿大晉級 16 強。' }],
+      ['2026-06-29T17:00Z', 'NRG Stadium', 'BRA', 'JPN', '完賽', 2, 1, [['JPN', '29', 'Kaishu Sano'], ['BRA', '56', 'Casemiro'], ['BRA', "90'+5", 'Gabriel Martinelli']], { espnId: '760487', source: 'ESPN', note: '巴西晉級 16 強。' }],
+      ['2026-06-29T20:30Z', 'Gillette Stadium', 'GER', 'PAR', '進行中', 1, 1, [], { espnId: '760489', source: 'ESPN', minute: 'PK 戰', note: 'PK 戰即時更新中。' }],
+      ['2026-06-30T01:00Z', 'Estadio BBVA', 'NED', 'MAR', '未賽', null, null, [], { espnId: '760488', source: 'ESPN' }],
+      ['2026-06-30T17:00Z', 'AT&T Stadium', 'CIV', 'NOR', '未賽', null, null, [], { espnId: '760490', source: 'ESPN' }],
+      ['2026-06-30T21:00Z', 'MetLife Stadium', 'FRA', 'SWE', '未賽', null, null, [], { espnId: '760492', source: 'ESPN' }],
+      ['2026-07-01T01:00Z', 'Estadio Banorte', 'MEX', 'ECU', '未賽', null, null, [], { espnId: '760491', source: 'ESPN' }],
+      ['2026-07-01T16:00Z', 'Mercedes-Benz Stadium', 'ENG', 'COD', '未賽', null, null, [], { espnId: '760495', source: 'ESPN' }],
+      ['2026-07-01T20:00Z', 'Lumen Field', 'BEL', 'SEN', '未賽', null, null, [], { espnId: '760493', source: 'ESPN' }],
+      ['2026-07-02T00:00Z', "Levi's Stadium", 'USA', 'BIH', '未賽', null, null, [], { espnId: '760494', source: 'ESPN' }],
+      ['2026-07-02T19:00Z', 'SoFi Stadium', 'ESP', 'AUT', '未賽', null, null, [], { espnId: '760497', source: 'ESPN' }],
+      ['2026-07-02T23:00Z', 'BMO Field', 'POR', 'CRO', '未賽', null, null, [], { espnId: '760496', source: 'ESPN' }],
+      ['2026-07-03T03:00Z', 'BC Place', 'SUI', 'ALG', '未賽', null, null, [], { espnId: '760498', source: 'ESPN' }],
+      ['2026-07-03T18:00Z', 'AT&T Stadium', 'AUS', 'EGY', '未賽', null, null, [], { espnId: '760499', source: 'ESPN' }],
+      ['2026-07-03T22:00Z', 'Hard Rock Stadium', 'ARG', 'CPV', '未賽', null, null, [], { espnId: '760500', source: 'ESPN' }],
+      ['2026-07-04T01:30Z', 'GEHA Field at Arrowhead Stadium', 'COL', 'GHA', '未賽', null, null, [], { espnId: '760501', source: 'ESPN' }],
+    ],
+  },
+];
+
+const FUTURE_KNOCKOUT_SLOTS = {
+  r16: [
+    ['32 強第 1 場勝者', '32 強第 2 場勝者'],
+    ['32 強第 3 場勝者', '32 強第 4 場勝者'],
+    ['32 強第 5 場勝者', '32 強第 6 場勝者'],
+    ['32 強第 7 場勝者', '32 強第 8 場勝者'],
+    ['32 強第 9 場勝者', '32 強第 10 場勝者'],
+    ['32 強第 11 場勝者', '32 強第 12 場勝者'],
+    ['32 強第 13 場勝者', '32 強第 14 場勝者'],
+    ['32 強第 15 場勝者', '32 強第 16 場勝者'],
+  ],
+  qf: [
+    ['16 強第 1 場勝者', '16 強第 2 場勝者'],
+    ['16 強第 3 場勝者', '16 強第 4 場勝者'],
+    ['16 強第 5 場勝者', '16 強第 6 場勝者'],
+    ['16 強第 7 場勝者', '16 強第 8 場勝者'],
+  ],
+  sf: [
+    ['8 強第 1 場勝者', '8 強第 2 場勝者'],
+    ['8 強第 3 場勝者', '8 強第 4 場勝者'],
+  ],
+  third: [['4 強敗隊', '4 強敗隊']],
+  final: [['4 強勝隊', '4 強勝隊']],
+};
+
 const LIVE_REFRESH_MS = 30000;
 const ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 const TAIWAN_LOTTERY_WC_URL = 'data/taiwan-odds.json';
@@ -543,7 +593,18 @@ const HOME_FILTERS = [
 
 function renderTabs() {
   const tabs = $('tabs');
-  if (tabs) tabs.innerHTML = '';
+  if (!tabs) return;
+  const items = [
+    { id: 'home', label: '今日' },
+    { id: 'groups', label: '小組賽' },
+    ...KNOCKOUT_TABS,
+    { id: 'schedule', label: '完整賽程' },
+  ];
+  tabs.innerHTML = items.map((tab) => `
+    <button class="tab ${state.activeTab === tab.id ? 'active' : ''}" data-tab="${tab.id}">
+      ${tab.label}
+    </button>
+  `).join('');
 }
 
 function teamGroupName(code) {
@@ -657,7 +718,9 @@ function hasScore(fixture) {
 }
 
 function allFixtures() {
-  return GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)));
+  const groupFixtures = GROUPS.flatMap((group) => group.fixtures.map((item) => normalizeFixture(item, group)));
+  const knockoutFixtures = KNOCKOUT_STAGES.flatMap((stage) => stage.fixtures.map((item) => normalizeFixture(item, { id: stage.id, name: stage.name })));
+  return [...groupFixtures, ...knockoutFixtures];
 }
 
 function currentFixturesForGroup(group) {
@@ -1374,6 +1437,14 @@ function formatTaipeiDateTime(date) {
 
 function fixtureDisplayDateTime(dateText) {
   const source = String(dateText || '');
+  if (/^\d{4}-\d{2}-\d{2}T/.test(source)) {
+    const taipeiDateTime = formatTaipeiDateTime(new Date(source));
+    return {
+      dateTime: taipeiDateTime,
+      date: taipeiDateTime.slice(0, 10),
+      time: taipeiDateTime.slice(11, 16)
+    };
+  }
   const match = source.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(.+))?$/);
   if (!match) return { dateTime: source, date: source.slice(0, 10), time: '' };
   if (!match[2]) return { dateTime: match[1], date: match[1], time: '' };
@@ -1701,6 +1772,58 @@ function renderFullSchedule() {
   `;
 }
 
+function renderKnockoutStage(tabId) {
+  const tab = KNOCKOUT_TABS.find((item) => item.id === tabId);
+  const stage = KNOCKOUT_STAGES.find((item) => item.id === tabId);
+  if (!tab) return renderHome();
+
+  if (stage?.fixtures?.length) {
+    const fixtures = stage.fixtures
+      .map((item) => normalizeFixture(item, { id: stage.id, name: stage.name }))
+      .sort(fixtureSort);
+    $('content').innerHTML = `
+      <section class="today-section match-list-section">
+        <div class="group-header">
+          <div>
+            <p class="eyebrow">淘汰賽</p>
+            <h2>${stage.name}</h2>
+          </div>
+          <p>${fixtures.filter((fixture) => fixture.status === '完賽').length} / ${fixtures.length} 場已完賽</p>
+        </div>
+        <div class="fixtures fixtures--today fixtures--compact-list">
+          ${fixtures.map((fixture) => renderTodayFixture(fixture, { compact: true })).join('')}
+        </div>
+      </section>
+    `;
+    return;
+  }
+
+  const slots = FUTURE_KNOCKOUT_SLOTS[tabId] || Array.from({ length: tab.slots }, () => ['待定', '待定']);
+  const rows = slots.map(([home, away], index) => `
+    <tr>
+      <td>第 ${index + 1} 場</td>
+      <td>${home} <span class="muted">對</span> ${away}</td>
+      <td class="empty-slot">晉級隊伍確認後更新</td>
+      <td><span class="source-pill status-soon">待定</span></td>
+    </tr>
+  `).join('');
+  $('content').innerHTML = `
+    <section class="group-section inactive-stage">
+      <div class="group-header">
+        <div>
+          <p class="eyebrow">淘汰賽</p>
+          <h2>${tab.label}</h2>
+        </div>
+        <p>上一輪結果確認後自動填入隊伍與時間。</p>
+      </div>
+      <table class="standings-table">
+        <thead><tr><th>場次</th><th>對戰</th><th>時間</th><th>狀態</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+  `;
+}
+
 function renderRegressionPanel() {
   const regressionModel = buildRegressionModel();
   const confidence = pct(regressionModel.credibility);
@@ -1766,7 +1889,10 @@ function render() {
   renderTabs();
   renderJumpControls();
   renderSourceNote();
-  renderHome();
+  if (state.activeTab === 'groups') renderGroups();
+  else if (state.activeTab === 'schedule') renderFullSchedule();
+  else if (KNOCKOUT_TABS.some((tab) => tab.id === state.activeTab)) renderKnockoutStage(state.activeTab);
+  else renderHome();
 }
 
 $('tabs')?.addEventListener('click', (event) => {
